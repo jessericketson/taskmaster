@@ -1,0 +1,510 @@
+body {
+    font-family: 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    background: #1a1a1a;
+    color: #e0e0e0;
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1920px;
+    margin: 15px auto;
+    display: flex;
+    gap: 20px;
+    height: calc(100vh - 30px);
+    overflow: hidden;
+}
+
+.sidebar {
+    width: 320px;
+    background: #252525;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    height: 100%;
+    overflow-y: auto;
+}
+
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    height: 100%;
+}
+
+.top-row {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.right-column {
+    width: 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    height: 100%;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.controls {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+button {
+    padding: 14px 28px;
+    border: none;
+    border-radius: 8px;
+    background: #00d4ff;
+    color: #1a1a1a;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+    font-weight: 1000;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    height: 48px;
+    line-height: 20px;
+}
+
+button:hover {
+    background: #00b8e6;
+    transform: translateY(-2px);
+}
+
+button:disabled {
+    background: #4b636e;
+    cursor: not-allowed;
+    transform: none;
+}
+
+button.edit {
+    background: #26a69a;
+    padding: 6px;
+    width: 26px;
+    height: 26px;
+    line-height: 14px;
+    font-size: 14px;
+}
+
+button.edit:hover {
+    background: #00897b;
+}
+
+button.delete {
+    background: #ef5350;
+    padding: 6px;
+    width: 26px;
+    height: 26px;
+    line-height: 14px;
+    font-size: 14px;
+}
+
+button.delete:hover {
+    background: #d32f2f;
+}
+
+#task-btn {
+    background: #ffca28;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+#task-btn:hover {
+    background: #ffb300;
+}
+
+input, textarea {
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #37474f;
+    background: #303030;
+    color: #e0e0e0;
+    flex: 1;
+    min-width: 200px;
+    font-size: 1em;
+}
+
+textarea {
+    height: 100px;
+    resize: vertical;
+}
+
+.task-input {
+    margin-top: 20px;
+}
+
+.suggestion {
+    font-size: 1.3em;
+    padding: 8px 20px;
+    background: #303030;
+    border-radius: 10px;
+    color: #e0e0e0;
+    min-height: 36px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: relative;
+}
+
+.suggestion::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    background: var(--task-color, #888888);
+    border-radius: 10px 0 0 10px;
+}
+
+.time-adjust button {
+    padding: 6px 12px;
+    background: #26a69a;
+    margin: 0 5px;
+}
+
+.time-adjust button:hover {
+    background: #00897b;
+}
+
+.timer {
+    font-size: 3.8em;
+    color: #26a69a;
+    font-weight: 700;
+    letter-spacing: 1px;
+    height: 48px;
+    line-height: 48px;
+}
+
+.comment-section {
+    margin: 0;
+}
+
+.calendar {
+    padding: 20px;
+    background: #303030;
+    border-radius: 12px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.fc-scroller {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #00d4ff #252525;
+}
+
+.fc-scroller::-webkit-scrollbar {
+    width: 12px;
+}
+
+.fc-scroller::-webkit-scrollbar-track {
+    background: #252525;
+    border-radius: 6px;
+    margin: 10px 2px 10px 2px;
+    width: 12px;
+}
+
+.fc-scroller::-webkit-scrollbar-thumb {
+    background: linear-gradient(90deg, #00d4ff, #26a69a);
+    border-radius: 6px;
+    border: 3px solid #303030;
+    width: 6px;
+}
+
+.fc-scroller::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(90deg, #00b8e6, #00897b);
+}
+
+.fc .fc-timegrid-slot {
+    height: 6em;
+}
+
+.fc .fc-daygrid-event,
+.fc .fc-timegrid-event {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    position: relative !important;
+    cursor: pointer !important;
+}
+
+.fc .fc-daygrid-event .fc-event-main,
+.fc .fc-timegrid-event .fc-event-main {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.fc {
+    color: #e0e0e0;
+}
+
+.fc .fc-col-header-cell,
+.fc .fc-timegrid-col {
+    background: #252525;
+}
+
+.fc .fc-day-today {
+    background: #37474f !important;
+}
+
+.fc .fc-toolbar {
+    padding: 10px;
+}
+
+.fc .fc-button-group .fc-button {
+    margin: 0 5px;
+}
+
+.fc-button {
+    background: #00d4ff !important;
+    border: none !important;
+}
+
+.fc-button:hover {
+    background: #00b8e6 !important;
+}
+
+.task-details {
+    padding: 20px;
+    background: #303030;
+    border-radius: 10px;
+    color: #e0e0e0;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    height: 50%;
+    overflow-y: auto;
+}
+
+.task-details h3 {
+    margin: 0 0 10px;
+    color: #00d4ff;
+    font-size: 1.4em;
+}
+
+.task-details p {
+    margin: 5px 0;
+    font-size: 1.1em;
+}
+
+.task-details button {
+    margin-top: 15px;
+    background: #ef5350;
+}
+
+.task-details button:hover {
+    background: #d32f2f;
+}
+
+.progress-box {
+    padding: 20px;
+    background: #303030;
+    border-radius: 10px;
+    color: #e0e0e0;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    height: 50%;
+    overflow-y: auto;
+}
+
+.progress-box h3 {
+    margin: 0 0 15px;
+    color: #00d4ff;
+    font-size: 1.4em;
+}
+
+.progress-box .progress-item {
+    margin: 10px 0;
+}
+
+.progress-box .progress-item span {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.progress-box .progress-bar {
+    position: relative;
+    width: 100%;
+    height: 4px;
+    background: #37474f;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.progress-box .progress-bar .completed {
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.progress-box .progress-bar .suggested {
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0.5;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+}
+
+li {
+    padding: 14px;
+    background: #303030;
+    margin: 10px 0;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column; /* Stack header and subtasks vertically */
+    transition: background 0.3s ease;
+    cursor: pointer;
+    position: relative;
+}
+
+li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    background: var(--task-color, #888888);
+    border-radius: 8px 0 0 8px;
+}
+
+li:hover {
+    background: #37474f;
+}
+
+li .task-header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between; /* Push buttons to the right */
+    align-items: center;
+}
+
+li .task-header .buttons {
+    display: flex;
+    gap: 5px; /* Space between edit and delete */
+}
+
+li .task-header .delete,
+li .task-header .edit {
+    visibility: hidden;
+}
+
+li:hover .task-header .delete,
+li:hover .task-header .edit {
+    visibility: visible;
+}
+
+.subtasks {
+    margin-top: 10px; /* Space below task header */
+    padding: 0;
+    display: none;
+    background: #252525;
+    border-radius: 8px;
+    width: 100%;
+}
+
+.subtasks.active {
+    display: block;
+}
+
+.subtasks li {
+    padding: 10px;
+    margin: 5px 0;
+    display: flex;
+    flex-direction: column; /* Stack subtask content vertically */
+}
+
+.subtasks li .subtask-header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between; /* Push buttons to the right */
+    align-items: center;
+}
+
+.subtasks li .subtask-header .buttons {
+    display: flex;
+    gap: 5px; /* Space between edit and delete */
+}
+
+.subtasks li .subtask-header .delete,
+.subtasks li .subtask-header .edit {
+    visibility: hidden;
+}
+
+.subtasks li:hover .subtask-header .delete,
+.subtasks li:hover .subtask-header .edit {
+    visibility: visible;
+}
+
+button.delete, button.add-subtask, button.edit {
+    padding: 6px;
+    width: 26px;
+    height: 26px;
+    line-height: 14px;
+    font-size: 14px;
+}
+
+button.add-subtask {
+    background: #26a69a;
+}
+
+button.add-subtask:hover {
+    background: #00897b;
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        margin-bottom: 20px;
+        height: auto;
+    }
+    .main-content {
+        flex-direction: column;
+        height: auto;
+    }
+    .top-row, .right-column {
+        width: 100%;
+        height: auto;
+    }
+    .timer {
+        font-size: 2em;
+    }
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .controls, .task-input, .comment-section, .suggestion {
+        flex-direction: column;
+        align-items: center;
+    }
+    button, input, textarea {
+        width: 100%;
+        max-width: 320px;
+    }
+    .time-adjust {
+        display: flex;
+        gap: 12px;
+    }
+    .calendar, .task-details, .progress-box {
+        height: auto;
+    }
+}
