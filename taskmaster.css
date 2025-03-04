@@ -29,40 +29,38 @@ body {
 .main-content {
     flex: 1; /* Take remaining space */
     display: flex;
-    flex-direction: row; /* Keep row for desktop */
+    flex-direction: row;
     gap: 20px;
     height: 100%;
 }
 
 .top-row {
-    flex: 1; /* Grow to fill left side */
+    flex: 1;
     display: flex;
     flex-direction: column;
     gap: 20px;
 }
 
 .right-column {
-    width: 400px; /* Fixed width */
+    width: 400px;
     display: flex;
     flex-direction: column;
     gap: 20px;
     height: 100%;
-    min-width: 0; /* Prevent overflow */
 }
 
 .header {
     display: flex;
-    flex-direction: column; /* Stack controls and timer vertically */
-    gap: 15px;
-    align-items: center; /* Center items */
+    flex-direction: row; /* Horizontal layout for controls and timer */
+    justify-content: space-between; /* Push Generate Task left, timer right */
+    align-items: center;
+    gap: 20px; /* Space between controls and timer */
 }
 
 .controls {
     display: flex;
     gap: 15px;
-    flex-wrap: wrap;
-    justify-content: center; /* Center buttons */
-    width: 100%; /* Ensure full width */
+    flex-wrap: wrap; /* Allow wrapping on small screens */
 }
 
 button {
@@ -119,8 +117,7 @@ button.delete:hover {
 
 #task-btn {
     background: #ffca28;
-    width: 100%; /* Full width for prominence */
-    margin-bottom: 20px;
+    width: auto; /* Revert to default width to fit in controls */
 }
 
 #task-btn:hover {
@@ -161,7 +158,7 @@ textarea {
     align-items: center;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
     position: relative;
-    width: 100%; /* Ensure full width */
+    width: 100%;
 }
 
 .suggestion::before {
@@ -192,7 +189,6 @@ textarea {
     letter-spacing: 1px;
     height: 48px;
     line-height: 48px;
-    text-align: center;
 }
 
 .comment-section {
@@ -206,7 +202,7 @@ textarea {
     padding: 20px;
     background: #303030;
     border-radius: 12px;
-    flex: 1; /* Grow to fill available space */
+    flex: 1; /* Grow to fill available space in main-content */
     min-height: 400px; /* Ensure minimum visibility */
     overflow-y: auto;
 }
@@ -513,7 +509,7 @@ button.add-subtask:hover {
     }
 
     .calendar {
-        height: 400px; /* Fixed height for mobile */
+        height: 400px;
         min-height: unset;
     }
 

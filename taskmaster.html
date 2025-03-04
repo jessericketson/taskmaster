@@ -40,21 +40,20 @@
                     </div>
                 </div>
             </div>
+            <div class="calendar" id="calendar"></div>
             <div class="right-column">
-                <div class="calendar" id="calendar"></div>
                 <div class="task-details" id="task-details">
                     <h3>No Task Selected</h3>
                     <p>Select a completed task from the calendar to view details.</p>
                 </div>
                 <div class="progress-box">
-                    <h3 id="progress-title">Progress</h3>
+                    <h3 id="progress-title">Daily Progress</h3>
                     <div id="progress-list"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Load Socket.IO client before taskmaster.js -->
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
     <script src="taskmaster.js"></script>
