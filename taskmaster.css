@@ -414,7 +414,7 @@ ul {
 li {
     padding: 14px;
     background: #303030;
-    margin: 10px 0;
+    margin: 10px 0px;
     border-radius: 8px;
     display: flex;
     flex-direction: column; /* Revert to vertical stacking for tasks */
@@ -422,6 +422,7 @@ li {
     transition: background 0.3s ease;
     cursor: pointer;
     position: relative;
+
 }
 
 li::before {
@@ -481,7 +482,7 @@ li:hover .edit {
 
 .subtasks li {
     padding: 10px;
-    margin: 5px 0;
+    margin: 5px 5px;
     display: flex;
     flex-direction: column; /* Revert to vertical stacking for subtasks */
     align-items: flex-start;
