@@ -5,55 +5,58 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Taskmaster</title>
     <link rel="stylesheet" href="taskmaster.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css" rel="stylesheet">
 </head>
 <body>
     <div class="container">
         <div class="sidebar">
-            <button id="task-btn">Generate Task</button>
-            <ul id="task-list"></ul>
+            <h2>Tasks</h2>
             <div class="task-input">
-                <input type="text" id="new-task" placeholder="Add a New Task">
+                <input type="text" id="new-task" placeholder="Add a new task...">
                 <button onclick="addTask()">Add</button>
             </div>
+            <ul id="task-list"></ul>
         </div>
         <div class="main-content">
             <div class="top-row">
                 <div class="header">
                     <div class="controls">
-                        <button id="accept-btn" disabled>Start</button>
+                        <button id="task-btn">Generate Task</button>
+                        <button id="accept-btn" disabled>Accept</button>
                         <button id="pause-btn" disabled>Pause</button>
                         <button id="finish-btn" disabled>Finish</button>
                     </div>
-                    <div id="timer" class="timer">00:00:00</div>
-                </div>
-                <div id="suggestion" class="suggestion">
-                    <span id="task-text">Select a Task to Begin</span>
-                    <div class="time-adjust">
-                        <button id="time-up" disabled>⬆</button>
-                        <button id="time-down" disabled>⬇</button>
+                    <div class="timer" id="timer">00:00:00</div>
+                    <div class="suggestion" id="suggestion">
+                        <p id="task-text">Select a Task to Begin</p>
+                        <div class="time-adjust">
+                            <button id="time-up" disabled>+</button>
+                            <button id="time-down" disabled>-</button>
+                        </div>
+                    </div>
+                    <div class="comment-section" id="comment-section" style="display: none;">
+                        <textarea id="task-comment" placeholder="Add a comment..."></textarea>
+                        <button onclick="saveComment()">Save</button>
                     </div>
                 </div>
-                <div id="comment-section" class="comment-section" style="display: none;">
-                    <textarea id="task-comment" placeholder="Add a comment for this task"></textarea>
-                    <button onclick="saveComment()">Save Comment</button>
-                </div>
-                <div id="calendar" class="calendar"></div>
             </div>
             <div class="right-column">
-                <div id="task-details" class="task-details">
+                <div class="calendar" id="calendar"></div>
+                <div class="task-details" id="task-details">
                     <h3>No Task Selected</h3>
                     <p>Select a completed task from the calendar to view details.</p>
                 </div>
-                <div id="progress-box" class="progress-box">
+                <div class="progress-box">
                     <h3 id="progress-title">Progress</h3>
                     <div id="progress-list"></div>
                 </div>
             </div>
         </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+
+    <!-- Load Socket.IO client before taskmaster.js -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
     <script src="taskmaster.js"></script>
 </body>
 </html>
