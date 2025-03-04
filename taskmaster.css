@@ -5,7 +5,6 @@ body {
     margin: 0;
     padding: 0;
     line-height: 1.6;
-    overflow-x: hidden; /* Prevent horizontal overflow on body */
 }
 
 .container {
@@ -173,6 +172,7 @@ textarea {
     align-items: center;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
     position: relative;
+    
 }
 
 .suggestion::before {
@@ -190,12 +190,14 @@ textarea {
     display: flex;
     gap: 10px; /* More spacing between + and - buttons */
     margin-left: 10px; /* Push buttons away from text for better alignment */
+   
 }
 
 .time-adjust button {
     padding: 6px 12px;
     background: #26a69a;
     margin: 0;
+    height: 35px;
 }
 
 .time-adjust button:hover {
@@ -412,7 +414,7 @@ ul {
 li {
     padding: 14px;
     background: #303030;
-    margin: 10px 0;
+    margin: 10px 0px;
     border-radius: 8px;
     display: flex;
     flex-direction: column; /* Revert to vertical stacking for tasks */
@@ -420,6 +422,7 @@ li {
     transition: background 0.3s ease;
     cursor: pointer;
     position: relative;
+
 }
 
 li::before {
@@ -479,7 +482,7 @@ li:hover .edit {
 
 .subtasks li {
     padding: 10px;
-    margin: 5px 0;
+    margin: 5px 5px;
     display: flex;
     flex-direction: column; /* Revert to vertical stacking for subtasks */
     align-items: flex-start;
@@ -591,7 +594,7 @@ button.add-subtask:hover {
     border: 1px solid #37474f;
     background: #303030;
     color: #e0e0e0;
-    width: 100%;
+   
 }
 
 .popup-content button {
@@ -611,14 +614,12 @@ button.add-subtask:hover {
     background: #00b8e6;
 }
 
-/* Mobile Formatting Improvements and Swipe Navigation */
+/* Mobile Formatting Improvements */
 @media (max-width: 768px) {
     .container {
         flex-direction: column;
         margin: 0;
         height: auto;
-        position: relative; /* Enable positioning for swipe navigation */
-        overflow-x: hidden; /* Prevent horizontal overflow during swipe */
     }
 
     .sidebar {
@@ -633,159 +634,94 @@ button.add-subtask:hover {
         flex-direction: column;
         width: 100%;
         padding: 10px;
-        height: auto; /* Allow natural height for swipe */
     }
 
     .middle-column, .right-column {
         width: 100%;
     }
 
-    /* Reorder middle-column for mobile */
-    .middle-column {
-        order: 1; /* Default order for main task page */
-        display: flex;
-        flex-direction: column;
-        gap: 10px; /* Reduced gap for mobile */
-    }
-
-    /* Mobile-specific layout for middle-column */
-    .middle-column > .suggestion {
-        order: 1; /* Suggestion box at the top */
-    }
-
-    .middle-column > #task-btn {
-        order: 2; /* Generate Task button beneath suggestion */
-        width: 100%;
-        margin: 0; /* Reset margins for mobile */
-    }
-
-    .middle-column > .header {
-        order: 3; /* Timer and controls in header */
+    .header {
         flex-direction: column;
         align-items: center;
-        padding: 10px;
-        height: auto;
+        padding: 10px; /* Reduced padding for mobile */
+        height: auto; /* Allow natural height */
     }
 
-    .middle-column > .header .timer {
-        order: 1; /* Timer above controls */
-        font-size: 2em;
-        margin-top: 10px;
-    }
-
-    .middle-column > .header .controls {
-        order: 2; /* Start, Pause, Finish buttons below timer */
+    .controls {
         justify-content: center;
-        flex-direction: column;
-        gap: 10px;
+        flex-direction: column; /* Stack buttons vertically */
+        gap: 10px; /* More spacing on mobile */
     }
 
-    .middle-column > #task-list {
-        order: 4; /* Task list at the bottom */
-        max-height: calc(50vh - 20px); /* Limit height for scrolling */
-        overflow-y: auto;
+    .timer {
+        font-size: 2em;
+        margin-top: 10px; /* Space after buttons */
     }
 
-    /* Calendar Page for Swipe Navigation */
-    .calendar-page {
-        display: none;
-        position: absolute;
-        top: 0;
-        left: 100%;
-        width: 100%;
-        height: 100%;
-        background: #1a1a1a;
-        flex-direction: column;
-        gap: 20px;
-        padding: 10px;
-        transition: transform 0.3s ease-in-out;
-        z-index: 10;
+    .calendar {
+        height: 300px; /* Reduced height for mobile, more compact */
+        min-height: unset;
+        padding: 10px; /* Reduced padding */
     }
 
-    .calendar-page.active {
-        display: flex;
-        transform: translateX(-100%);
-    }
-
-    .calendar-page .calendar,
-    .calendar-page .task-details,
-    .calendar-page .progress-box {
-        width: 100%;
+    .task-details, .progress-box {
         height: auto;
-        margin: 0;
-        padding: 10px;
+        margin-top: 10px;
+        padding: 10px; /* Reduced padding */
     }
 
-    .calendar-page .calendar {
-        flex: 1;
-        min-height: 300px;
-        overflow-y: auto;
+    .suggestion {
+        height: auto; /* Allow natural height on mobile */
+        padding: 8px 10px; /* Reduced padding for mobile */
+        flex-direction: column; /* Stack text and time adjust */
+        align-items: flex-start; /* Align text left */
+        gap: 5px; /* Space between text and buttons */
     }
 
-    .calendar-page .task-details,
-    .calendar-page .progress-box {
-        height: auto;
-        overflow-y: auto;
+    .time-adjust {
+        margin-left: 0; /* Remove margin on mobile */
+        width: 100%; /* Full width on mobile */
     }
 
-    /* Back Button for Calendar Page */
-    .calendar-page .back-button {
-        background: #ef5350;
-        padding: 10px 20px;
-        border: none;
-        border-radius: 8px;
-        color: #1a1a1a;
-        cursor: pointer;
-        transition: background 0.3s ease;
-        font-weight: 1000;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .calendar-page .back-button:hover {
-        background: #d32f2f;
-    }
-
-    /* Swipe Navigation Styling */
-    .swipe-container {
-        position: relative;
+    .controls, .task-input, .comment-section {
+        flex-direction: column;
+        align-items: center;
         width: 100%;
-        height: 100%;
-        overflow: hidden;
     }
 
-    .swipe-container > div {
-        position: absolute;
-        top: 0;
-        left: 0;
+    button, input, textarea {
         width: 100%;
-        height: 100%;
-        transition: transform 0.3s ease-in-out;
+        max-width: 300px;
+        padding: 8px; /* Reduced padding for mobile */
+        margin: 5px 0;
     }
 
-    .swipe-container .main-page {
-        transform: translateX(0);
-        z-index: 5;
+    li, .subtasks li {
+        flex-direction: column; /* Stack on mobile */
+        align-items: flex-start;
+        padding: 8px; /* Reduced padding */
     }
 
-    .swipe-container .calendar-page {
-        transform: translateX(100%);
-        z-index: 1;
+    li .buttons, .subtasks li .buttons {
+        margin-left: 0;
+        margin-top: 5px; /* Space after name */
     }
 
-    /* Touch Events for Swipe */
-    .swipe-container {
-        touch-action: pan-x; /* Allow horizontal panning */
+    .add-task-button, button.add-subtask {
+        margin-left: 0;
+        margin-top: 5px; /* Stack below tasks/subtasks on mobile */
     }
-}
 
-/* Desktop Layout (no changes) */
-@media (min-width: 769px) {
-    .middle-column > .suggestion,
-    .middle-column > .header,
-    .middle-column > .calendar,
-    .middle-column > #task-list,
-    .middle-column > #task-btn {
-        order: unset; /* Reset order for desktop */
+    .subtasks {
+        margin-top: 5px;
+    }
+
+    .subtasks li {
+        padding: 6px; /* Reduced padding */
+    }
+
+    .popup-content {
+        width: 90%; /* Fuller width on mobile */
+        padding: 15px; /* Reduced padding */
     }
 }

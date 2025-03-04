@@ -270,158 +270,86 @@ async function deleteSubtask(taskIndex, subtaskName) {
     }
 }
 
-// Calendar rendering (desktop and mobile versions)
-let calendar, calendarMobile;
+// Calendar rendering
+let calendar;
 function renderCalendar() {
-    // Desktop calendar
     const calendarEl = document.getElementById("calendar");
-    if (calendarEl) {
-        calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: "timeGridDay",
-            headerToolbar: {
-                left: "prev,next today",
-                center: "title",
-                right: "dayGridMonth,timeGridWeek,timeGridDay"
-            },
-            slotDuration: '00:30:00',
-            events: completedTasks.map((t, index) => {
-                const taskInfo = tasks.find(task => task.name === t.task);
-                const bgColor = taskInfo ? taskInfo.color : "#888888";
-                return {
-                    title: `${t.task}${t.subtask ? " - " + t.subtask : ""}`,
-                    start: t.start,
-                    end: t.end,
-                    backgroundColor: bgColor,
-                    borderColor: bgColor,
-                    textColor: "#e0e0e0",
-                    extendedProps: { index, comment: t.comment, bgColor, duration: t.duration }
-                };
-            }),
-            eventClick: function(info) {
-                lastClickedTask = {
-                    title: info.event.title,
-                    start: info.event.start,
-                    end: info.event.end,
-                    comment: info.event.extendedProps.comment,
-                    index: info.event.extendedProps.index,
-                    duration: info.event.extendedProps.duration
-                };
-                updateTaskDetails();
-                if (window.innerWidth <= 768) updateTaskDetailsMobile(); // Update mobile task details
-            },
-            eventContent: function(arg) {
-                console.log("Rendering event:", arg.event.title, "Color:", arg.event.extendedProps.bgColor);
-                return {
-                    html: `
-                        <div style="
-                            color: #e0e0e0;
-                            background: #303030;
-                            border-left: 6px solid ${arg.event.extendedProps.bgColor};
-                            border-radius: 8px;
-                            padding: 6px 8px;
-                            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-                            overflow: hidden;
-                            white-space: nowrap;
-                            text-overflow: ellipsis;
-                            width: 100%;
-                            height: 100%;
-                            display: flex;
-                            align-items: center;
-                            justify-content: flex-start;
-                        ">${arg.event.title}</div>
-                    `
-                };
-            },
-            viewClassNames: function(arg) {
-                updateProgressBox(arg.view.type);
-                if (window.innerWidth <= 768) updateProgressBoxMobile(arg.view.type);
-            }
-        });
-        calendar.render();
-    }
-
-    // Mobile calendar
-    const calendarMobileEl = document.getElementById("calendar-mobile");
-    if (calendarMobileEl) {
-        calendarMobile = new FullCalendar.Calendar(calendarMobileEl, {
-            initialView: "timeGridDay",
-            headerToolbar: {
-                left: "prev,next today",
-                center: "title",
-                right: "dayGridMonth,timeGridWeek,timeGridDay"
-            },
-            slotDuration: '00:30:00',
-            events: completedTasks.map((t, index) => {
-                const taskInfo = tasks.find(task => task.name === t.task);
-                const bgColor = taskInfo ? taskInfo.color : "#888888";
-                return {
-                    title: `${t.task}${t.subtask ? " - " + t.subtask : ""}`,
-                    start: t.start,
-                    end: t.end,
-                    backgroundColor: bgColor,
-                    borderColor: bgColor,
-                    textColor: "#e0e0e0",
-                    extendedProps: { index, comment: t.comment, bgColor, duration: t.duration }
-                };
-            }),
-            eventClick: function(info) {
-                lastClickedTask = {
-                    title: info.event.title,
-                    start: info.event.start,
-                    end: info.event.end,
-                    comment: info.event.extendedProps.comment,
-                    index: info.event.extendedProps.index,
-                    duration: info.event.extendedProps.duration
-                };
-                updateTaskDetailsMobile();
-            },
-            eventContent: function(arg) {
-                console.log("Rendering mobile event:", arg.event.title, "Color:", arg.event.extendedProps.bgColor);
-                return {
-                    html: `
-                        <div style="
-                            color: #e0e0e0;
-                            background: #303030;
-                            border-left: 6px solid ${arg.event.extendedProps.bgColor};
-                            border-radius: 8px;
-                            padding: 6px 8px;
-                            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-                            overflow: hidden;
-                            white-space: nowrap;
-                            text-overflow: ellipsis;
-                            width: 100%;
-                            height: 100%;
-                            display: flex;
-                            align-items: center;
-                            justify-content: flex-start;
-                        ">${arg.event.title}</div>
-                    `
-                };
-            },
-            viewClassNames: function(arg) {
-                updateProgressBoxMobile(arg.view.type);
-            }
-        });
-        calendarMobile.render();
-    }
+    const scrollTop = calendarEl.scrollTop;
+    calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: "timeGridDay",
+        headerToolbar: {
+            left: "prev,next today",
+            center: "title",
+            right: "dayGridMonth,timeGridWeek,timeGridDay"
+        },
+        slotDuration: '00:30:00',
+        events: completedTasks.map((t, index) => {
+            const taskInfo = tasks.find(task => task.name === t.task);
+            const bgColor = taskInfo ? taskInfo.color : "#888888";
+            return {
+                title: `${t.task}${t.subtask ? " - " + t.subtask : ""}`,
+                start: t.start,
+                end: t.end,
+                backgroundColor: bgColor,
+                borderColor: bgColor,
+                textColor: "#e0e0e0",
+                extendedProps: { index, comment: t.comment, bgColor, duration: t.duration }
+            };
+        }),
+        eventClick: function(info) {
+            lastClickedTask = {
+                title: info.event.title,
+                start: info.event.start,
+                end: info.event.end,
+                comment: info.event.extendedProps.comment,
+                index: info.event.extendedProps.index,
+                duration: info.event.extendedProps.duration
+            };
+            updateTaskDetails();
+        },
+        eventContent: function(arg) {
+            console.log("Rendering event:", arg.event.title, "Color:", arg.event.extendedProps.bgColor);
+            return {
+                html: `
+                    <div style="
+                        color: #e0e0e0;
+                        background: #303030;
+                        border-left: 6px solid ${arg.event.extendedProps.bgColor};
+                        border-radius: 8px;
+                        padding: 6px 8px;
+                        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                        overflow: hidden;
+                        white-space: nowrap;
+                        text-overflow: ellipsis;
+                        width: 100%;
+                        height: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: flex-start;
+                    ">${arg.event.title}</div>
+                `
+            };
+        },
+        viewClassNames: function(arg) {
+            updateProgressBox(arg.view.type);
+        }
+    });
+    calendar.render();
+    calendarEl.scrollTop = scrollTop;
+    updateProgressBox(calendar.view.type);
 }
 
 function deleteCalendarTask(index) {
-    const scrollTop = document.getElementById("calendar").scrollTop || document.getElementById("calendar-mobile").scrollTop;
-    const currentView = (calendar || calendarMobile).view.type;
-    const currentDate = (calendar || calendarMobile).view.activeStart;
+    const scrollTop = document.getElementById("calendar").scrollTop;
+    const currentView = calendar.view.type;
+    const currentDate = calendar.view.activeStart;
     completedTasks.splice(index, 1);
-    if (calendar) calendar.destroy();
-    if (calendarMobile) calendarMobile.destroy();
+    calendar.destroy();
     renderCalendar();
-    if (calendar) calendar.changeView(currentView, currentDate);
-    if (calendarMobile) calendarMobile.changeView(currentView, currentDate);
+    calendar.changeView(currentView, currentDate);
     document.getElementById("calendar").scrollTop = scrollTop;
-    document.getElementById("calendar-mobile").scrollTop = scrollTop;
     updateTaskDetails();
-    updateTaskDetailsMobile();
     updateProgressBox(currentView);
-    updateProgressBoxMobile(currentView);
 }
 
 function updateTaskDetails() {
@@ -447,91 +375,9 @@ function updateTaskDetails() {
     }
 }
 
-function updateTaskDetailsMobile() {
-    const details = document.getElementById("task-details-mobile");
-    if (lastClickedTask) {
-        const durationH = Math.floor(lastClickedTask.duration / 3600).toString().padStart(2, "0");
-        const durationM = Math.floor((lastClickedTask.duration % 3600) / 60).toString().padStart(2, "0");
-        const durationS = (lastClickedTask.duration % 60).toString().padStart(2, "0");
-        const durationStr = `${durationH}:${durationM}:${durationS}`;
-        details.innerHTML = `
-            <h3>${lastClickedTask.title}</h3>
-            <p><strong>Start:</strong> ${new Date(lastClickedTask.start).toLocaleString()}</p>
-            <p><strong>End:</strong> ${new Date(lastClickedTask.end).toLocaleString()}</p>
-            <p><strong>Total Time:</strong> ${durationStr}</p>
-            <p><strong>Comment:</strong> ${lastClickedTask.comment || "No comment provided"}</p>
-            <button onclick="deleteCalendarTask(${lastClickedTask.index})">Delete Task</button>
-        `;
-    } else {
-        details.innerHTML = `
-            <h3>No Task Selected</h3>
-            <p>Select a completed task from the calendar to view details.</p>
-        `;
-    }
-}
-
 function updateProgressBox(viewType) {
     const progressList = document.getElementById("progress-list");
     const progressTitle = document.getElementById("progress-title");
-    progressList.innerHTML = "";
-    const now = new Date();
-    let startDate, maxSeconds, title;
-
-    switch (viewType) {
-        case "timeGridDay":
-            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            maxSeconds = 8 * 3600;
-            title = "Daily Progress";
-            break;
-        case "timeGridWeek":
-            startDate = new Date(now.setDate(now.getDate() - now.getDay()));
-            maxSeconds = 56 * 3600;
-            title = "Weekly Progress";
-            break;
-        case "dayGridMonth":
-            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-            maxSeconds = 224 * 3600;
-            title = "Monthly Progress";
-            break;
-        default:
-            startDate = new Date(now.setDate(now.getDate() - now.getDay()));
-            maxSeconds = 56 * 3600;
-            title = "Weekly Progress";
-    }
-
-    progressTitle.textContent = title;
-
-    const periodTasks = completedTasks.filter(t => new Date(t.start) >= startDate);
-    const taskProgress = {};
-    periodTasks.forEach(t => {
-        const key = `${t.task}${t.subtask ? " - " + t.subtask : ""}`;
-        if (!taskProgress[key]) {
-            const taskInfo = tasks.find(task => task.name === t.task);
-            taskProgress[key] = { completed: 0, suggested: t.time, color: taskInfo ? taskInfo.color : "#888888" };
-        }
-        taskProgress[key].completed += t.duration;
-    });
-
-    const pixelsPerSecond = 1200 / maxSeconds;
-    for (const [task, data] of Object.entries(taskProgress)) {
-        const completedPixels = Math.min(data.completed * pixelsPerSecond, 1200);
-        const suggestedPixels = Math.min(data.suggested * pixelsPerSecond, 1200);
-        const progressItem = document.createElement("div");
-        progressItem.className = "progress-item";
-        progressItem.innerHTML = `
-            <span>${task}</span>
-            <div class="progress-bar">
-                <div class="suggested" style="width: ${suggestedPixels}px; background: ${data.color}; opacity: 0.5;"></div>
-                <div class="completed" style="width: ${completedPixels}px; background: ${data.color};"></div>
-            </div>
-        `;
-        progressList.appendChild(progressItem);
-    }
-}
-
-function updateProgressBoxMobile(viewType) {
-    const progressList = document.getElementById("progress-list-mobile");
-    const progressTitle = document.getElementById("progress-title-mobile");
     progressList.innerHTML = "";
     const now = new Date();
     let startDate, maxSeconds, title;
@@ -826,53 +672,6 @@ function loadState() {
     }
 }
 
-// Swipe Navigation Functions
-let touchStartX = 0;
-let touchEndX = 0;
-
-function handleTouchStart(e) {
-    touchStartX = e.changedTouches[0].screenX;
-}
-
-function handleTouchEnd(e) {
-    touchEndX = e.changedTouches[0].screenX;
-    handleSwipe();
-}
-
-function handleSwipe() {
-    const swipeContainer = document.querySelector('.swipe-container');
-    const deltaX = touchEndX - touchStartX;
-    if (deltaX > 50 && document.querySelector('.calendar-page').classList.contains('active')) {
-        // Swipe right: go back to main page
-        goBack();
-    } else if (deltaX < -50 && window.innerWidth <= 768) {
-        // Swipe left: go to calendar page
-        showCalendarPage();
-    }
-}
-
-function showCalendarPage() {
-    const swipeContainer = document.querySelector('.swipe-container');
-    const mainPage = document.querySelector('.main-page');
-    const calendarPage = document.querySelector('.calendar-page');
-    mainPage.classList.remove('active');
-    calendarPage.classList.add('active');
-    if (calendarMobile) calendarMobile.render(); // Re-render mobile calendar
-    updateTaskDetailsMobile();
-    updateProgressBoxMobile(calendarMobile ? calendarMobile.view.type : 'timeGridDay');
-}
-
-function goBack() {
-    const swipeContainer = document.querySelector('.swipe-container');
-    const mainPage = document.querySelector('.main-page');
-    const calendarPage = document.querySelector('.calendar-page');
-    calendarPage.classList.remove('active');
-    mainPage.classList.add('active');
-    if (calendar) calendar.render(); // Re-render desktop calendar if needed
-    updateTaskDetails();
-    updateProgressBox(calendar ? calendar.view.type : 'timeGridDay');
-}
-
 // Event listeners
 document.getElementById("task-btn").addEventListener("click", () => generateTask());
 document.getElementById("start-btn").addEventListener("click", startTimer);
@@ -880,13 +679,7 @@ document.getElementById("pause-btn").addEventListener("click", pauseTimer);
 document.getElementById("finish-btn").addEventListener("click", finishTimer);
 document.getElementById("time-up").addEventListener("click", () => adjustTime("up"));
 document.getElementById("time-down").addEventListener("click", () => adjustTime("down"));
-
-// Touch event listeners for swipe
-const swipeContainer = document.querySelector('.swipe-container');
-if (swipeContainer) {
-    swipeContainer.addEventListener('touchstart', handleTouchStart, false);
-    swipeContainer.addEventListener('touchend', handleTouchEnd, false);
-}
+// Removed separate .add-task-button event listener, handled in renderTasks
 
 // Initial setup
 Promise.all([fetchTasks(), fetchCompletedTasks()]).then(([taskData, completedData]) => {
@@ -897,9 +690,6 @@ Promise.all([fetchTasks(), fetchCompletedTasks()]).then(([taskData, completedDat
     renderTasks();
     renderCalendar();
     loadState();
-    if (window.innerWidth <= 768) {
-        document.querySelector('.main-page').classList.add('active');
-    }
 }).catch(err => {
     console.error('Initial fetch failed:', err);
     renderTasks();
@@ -914,7 +704,6 @@ Promise.all([fetchTasks(), fetchCompletedTasks()]).then(([taskData, completedDat
             completedTasks = data.length ? data : [];
             renderCalendar();
             updateProgressBox('timeGridDay');
-            updateProgressBoxMobile('timeGridDay');
         });
     }, 5000);
 });
@@ -927,11 +716,8 @@ socket.on('tasksUpdated', (updatedTasks) => {
 
 socket.on('completedTasksUpdated', (updatedCompletedTasks) => {
     completedTasks = updatedCompletedTasks;
-    if (calendar) calendar.destroy();
-    if (calendarMobile) calendarMobile.destroy();
     renderCalendar();
     updateProgressBox(calendar ? calendar.view.type : 'timeGridDay');
-    updateProgressBoxMobile(calendarMobile ? calendarMobile.view.type : 'timeGridDay');
 });
 
 socket.on('timerUpdate', (data) => {

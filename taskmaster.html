@@ -8,59 +8,44 @@
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css" rel="stylesheet">
 </head>
 <body>
-    <div class="swipe-container">
-        <div class="main-page">
-            <div class="container">
-                <div class="sidebar">
-                    <button id="task-btn">Generate Task</button>
-                    <ul id="task-list"></ul>
-                </div>
-                <div class="main-content">
-                    <div class="middle-column">
-                        <div class="suggestion" id="suggestion">
-                            <p id="task-text">Select a Task to Begin</p>
-                            <div class="time-adjust">
-                                <button id="time-up" disabled>+</button>
-                                <button id="time-down" disabled>-</button>
-                            </div>
-                        </div>
-                        <div class="header">
-                            <div class="controls">
-                                <button id="start-btn" disabled>Start</button>
-                                <button id="pause-btn" disabled>Pause</button>
-                                <button id="finish-btn" disabled>Finish</button>
-                            </div>
-                            <div class="timer" id="timer">00:00:00</div>
-                        </div>
-                        <div class="calendar" id="calendar"></div>
-                        <div class="comment-section" id="comment-section" style="display: none;">
-                            <textarea id="task-comment" placeholder="Add a comment..."></textarea>
-                            <button onclick="saveComment()">Save</button>
-                        </div>
-                    </div>
-                    <div class="right-column">
-                        <div class="task-details" id="task-details">
-                            <h3>No Task Selected</h3>
-                            <p>Select a completed task from the calendar to view details.</p>
-                        </div>
-                        <div class="progress-box">
-                            <h3 id="progress-title">Daily Progress</h3>
-                            <div id="progress-list"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <div class="container">
+        <div class="sidebar">
+            <button id="task-btn">Generate Task</button>
+            <ul id="task-list"></ul>
+          
         </div>
-        <div class="calendar-page">
-            <button class="back-button" onclick="goBack()">Back</button>
-            <div class="calendar" id="calendar-mobile"></div>
-            <div class="task-details" id="task-details-mobile">
-                <h3>No Task Selected</h3>
-                <p>Select a completed task from the calendar to view details.</p>
+        <div class="main-content">
+            <div class="middle-column">
+                <div class="header">
+                    <div class="controls">
+                        <button id="start-btn" disabled>Start</button>
+                        <button id="pause-btn" disabled>Pause</button>
+                        <button id="finish-btn" disabled>Finish</button>
+                    </div>
+                    <div class="timer" id="timer">00:00:00</div>
+                </div>
+                <div class="suggestion" id="suggestion">
+                    <p id="task-text">Select a Task to Begin</p>
+                    <div class="time-adjust">
+                        <button id="time-up" disabled>+</button>
+                        <button id="time-down" disabled>-</button>
+                    </div>
+                </div>
+                <div class="calendar" id="calendar"></div>
+                <div class="comment-section" id="comment-section" style="display: none;">
+                    <textarea id="task-comment" placeholder="Add a comment..."></textarea>
+                    <button onclick="saveComment()">Save</button>
+                </div>
             </div>
-            <div class="progress-box">
-                <h3 id="progress-title-mobile">Daily Progress</h3>
-                <div id="progress-list-mobile"></div>
+            <div class="right-column">
+                <div class="task-details" id="task-details">
+                    <h3>No Task Selected</h3>
+                    <p>Select a completed task from the calendar to view details.</p>
+                </div>
+                <div class="progress-box">
+                    <h3 id="progress-title">Daily Progress</h3>
+                    <div id="progress-list"></div>
+                </div>
             </div>
         </div>
     </div>
