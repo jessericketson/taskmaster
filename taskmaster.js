@@ -468,11 +468,13 @@ async function addTask() {
             prob: 1,
             color: `#${Math.floor(Math.random() * 16777215).toString(16)}`
         });
-        input.value = "";
+        input.value = ""; // Clear input
         await saveTasks(tasks);
         renderTasks();
     }
 }
+
+document.querySelector('.add-task-button').addEventListener('click', addTask);
 
 // Remove task
 async function deleteTask(index) {

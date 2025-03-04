@@ -56,6 +56,7 @@ body {
     flex-direction: row; /* Three columns */
     gap: 20px;
     height: 100%;
+    overflow-x: hidden; /* Prevent horizontal overflow */
 }
 
 .middle-column {
@@ -64,7 +65,9 @@ body {
     flex-direction: column; /* Stack vertically */
     gap: 20px;
     height: 100%;
-    width: 100%; /* Ensure full width */
+    width: 100%; /* Full width, no constraints */
+    max-width: none; /* Remove max-width to prevent clipping */
+    overflow-x: visible; /* Allow full width, no clipping */
 }
 
 .header {
@@ -77,6 +80,8 @@ body {
     align-items: center;
     gap: 20px;
     height: 48px; /* Fixed height for consistency */
+    width: 100%; /* Full width, no constraints */
+    max-width: none; /* Remove max-width to preserve rounded corners */
 }
 
 .controls {
@@ -413,8 +418,8 @@ li {
     margin: 10px 0;
     border-radius: 8px;
     display: flex;
-    flex-direction: row; /* Horizontal layout for task name and buttons */
-    align-items: center;
+    flex-direction: column; /* Revert to vertical stacking for tasks */
+    align-items: flex-start;
     transition: background 0.3s ease;
     cursor: pointer;
     position: relative;
@@ -436,9 +441,9 @@ li:hover {
 }
 
 li .task-header {
-    flex: 1; /* Take remaining space for task name */
+    width: 100%;
     display: flex;
-    justify-content: flex-start; /* Align task name left */
+    justify-content: space-between; /* Align name left, buttons right */
     align-items: center;
 }
 
@@ -449,7 +454,6 @@ li .task-header span {
 li .buttons {
     display: flex;
     gap: 5px;
-    margin-left: auto; /* Push buttons to the right */
 }
 
 li .delete,
@@ -479,14 +483,14 @@ li:hover .edit {
     padding: 10px;
     margin: 5px 0;
     display: flex;
-    flex-direction: row; /* Horizontal layout for subtask name and buttons */
-    align-items: center;
+    flex-direction: column; /* Revert to vertical stacking for subtasks */
+    align-items: flex-start;
 }
 
 .subtasks li .subtask-header {
-    flex: 1; /* Take remaining space for subtask name */
+    width: 100%;
     display: flex;
-    justify-content: flex-start; /* Align subtask name left */
+    justify-content: space-between; /* Align name left, buttons right */
     align-items: center;
 }
 
@@ -497,7 +501,6 @@ li:hover .edit {
 .subtasks li .buttons {
     display: flex;
     gap: 5px;
-    margin-left: auto; /* Push buttons to the right */
 }
 
 .subtasks li .delete,
@@ -526,6 +529,26 @@ button.add-subtask:hover {
     background: #00897b;
 }
 
+.add-task-button {
+    background: #26a69a;
+    padding: 6px;
+    width: 26px;
+    height: 26px;
+    line-height: 14px;
+    font-size: 14px;
+    border: none;
+    border-radius: 8px;
+    color: #1a1a1a;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.add-task-button:hover {
+    background: #00897b;
+    transform: translateY(-2px);
+}
+
+/* Mobile Formatting Improvements */
 @media (max-width: 768px) {
     .container {
         flex-direction: column;
@@ -553,27 +576,47 @@ button.add-subtask:hover {
     .header {
         flex-direction: column;
         align-items: center;
+        padding: 10px; /* Reduced padding for mobile */
+        height: auto; /* Allow natural height */
     }
 
     .controls {
         justify-content: center;
+        flex-direction: column; /* Stack buttons vertically */
+        gap: 10px; /* More spacing on mobile */
+    }
+
+    .timer {
+        font-size: 2em;
+        margin-top: 10px; /* Space after buttons */
     }
 
     .calendar {
-        height: 400px;
+        height: 300px; /* Reduced height for mobile, more compact */
         min-height: unset;
+        padding: 10px; /* Reduced padding */
     }
 
     .task-details, .progress-box {
         height: auto;
         margin-top: 10px;
+        padding: 10px; /* Reduced padding */
     }
 
-    .timer {
-        font-size: 2em;
+    .suggestion {
+        height: auto; /* Allow natural height on mobile */
+        padding: 8px 10px; /* Reduced padding for mobile */
+        flex-direction: column; /* Stack text and time adjust */
+        align-items: flex-start; /* Align text left */
+        gap: 5px; /* Space between text and buttons */
     }
 
-    .controls, .task-input, .comment-section, .suggestion {
+    .time-adjust {
+        margin-left: 0; /* Remove margin on mobile */
+        width: 100%; /* Full width on mobile */
+    }
+
+    .controls, .task-input, .comment-section {
         flex-direction: column;
         align-items: center;
         width: 100%;
@@ -582,18 +625,14 @@ button.add-subtask:hover {
     button, input, textarea {
         width: 100%;
         max-width: 300px;
-        padding: 10px;
+        padding: 8px; /* Reduced padding for mobile */
         margin: 5px 0;
-    }
-
-    .time-adjust {
-        display: flex;
-        gap: 10px;
     }
 
     li, .subtasks li {
         flex-direction: column; /* Stack on mobile */
         align-items: flex-start;
+        padding: 8px; /* Reduced padding */
     }
 
     li .buttons, .subtasks li .buttons {
@@ -601,17 +640,11 @@ button.add-subtask:hover {
         margin-top: 5px; /* Space after name */
     }
 
-    .suggestion {
-        height: auto; /* Allow natural height on mobile */
-        padding: 8px 20px; /* Default padding */
-        width: 100%; /* Full width on mobile */
-    }
-
     .subtasks {
         margin-top: 5px;
     }
 
     .subtasks li {
-        padding: 8px;
+        padding: 6px; /* Reduced padding */
     }
 }
