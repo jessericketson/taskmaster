@@ -517,8 +517,10 @@ async function saveNewTask() {
         };
         tasks.splice(tasks.length - 1, 0, newTask); // Insert before the last (Add Task) element
         await saveTasks(tasks);
-        renderTasks();
+        renderTasks(); // Ensure UI updates immediately
         closePopup(document.querySelector('.popup .popup-content button:nth-child(3)'));
+    } else {
+        console.error("Task name is empty or invalid");
     }
 }
 
