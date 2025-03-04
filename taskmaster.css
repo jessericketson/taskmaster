@@ -75,6 +75,7 @@ body {
     justify-content: space-between; /* Push buttons left, timer right */
     align-items: center;
     gap: 20px;
+    height: 48px; /* Match height for consistency */
 }
 
 .controls {
@@ -163,13 +164,14 @@ textarea {
     background: #303030;
     border-radius: 10px;
     color: #e0e0e0;
-    min-height: 36px;
+    height: 48px; /* Match .header height */
+    min-height: unset; /* Override default min-height */
     display: flex;
     justify-content: space-between;
     align-items: center;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
     position: relative;
-    width: 100%;
+    width: 100%; /* Match .header and .calendar width */
 }
 
 .suggestion::before {
@@ -216,6 +218,7 @@ textarea {
     flex: 1; /* Grow to fill available space in middle column */
     min-height: 400px; /* Ensure minimum visibility */
     overflow-y: auto;
+    width: 100%; /* Match .header and .suggestion width */
 }
 
 .right-column {
@@ -399,7 +402,8 @@ li {
     margin: 10px 0;
     border-radius: 8px;
     display: flex;
-    flex-direction: column;
+    flex-direction: row; /* Horizontal layout for task name and buttons */
+    align-items: center;
     transition: background 0.3s ease;
     cursor: pointer;
     position: relative;
@@ -421,24 +425,29 @@ li:hover {
 }
 
 li .task-header {
-    width: 100%;
+    flex: 1; /* Take remaining space for task name */
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start; /* Align task name left */
     align-items: center;
 }
 
-li .task-header .buttons {
-    display: flex;
-    gap: 5px;
+li .task-header span {
+    margin-right: auto; /* Push buttons to the right */
 }
 
-li .task-header .delete,
-li .task-header .edit {
+li .buttons {
+    display: flex;
+    gap: 5px;
+    margin-left: auto; /* Push buttons to the right */
+}
+
+li .delete,
+li .edit {
     visibility: hidden;
 }
 
-li:hover .task-header .delete,
-li:hover .task-header .edit {
+li:hover .delete,
+li:hover .edit {
     visibility: visible;
 }
 
@@ -459,28 +468,34 @@ li:hover .task-header .edit {
     padding: 10px;
     margin: 5px 0;
     display: flex;
-    flex-direction: column;
-}
-
-.subtasks li .subtask-header {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
+    flex-direction: row; /* Horizontal layout for subtask name and buttons */
     align-items: center;
 }
 
-.subtasks li .subtask-header .buttons {
+.subtasks li .subtask-header {
+    flex: 1; /* Take remaining space for subtask name */
     display: flex;
-    gap: 5px;
+    justify-content: flex-start; /* Align subtask name left */
+    align-items: center;
 }
 
-.subtasks li .subtask-header .delete,
-.subtasks li .subtask-header .edit {
+.subtasks li .subtask-header span {
+    margin-right: auto; /* Push buttons to the right */
+}
+
+.subtasks li .buttons {
+    display: flex;
+    gap: 5px;
+    margin-left: auto; /* Push buttons to the right */
+}
+
+.subtasks li .delete,
+.subtasks li .edit {
     visibility: hidden;
 }
 
-.subtasks li:hover .subtask-header .delete,
-.subtasks li:hover .subtask-header .edit {
+.subtasks li:hover .delete,
+.subtasks li:hover .edit {
     visibility: visible;
 }
 
@@ -565,8 +580,14 @@ button.add-subtask:hover {
         gap: 10px;
     }
 
-    li {
-        padding: 10px;
+    li, .subtasks li {
+        flex-direction: column; /* Stack on mobile */
+        align-items: flex-start;
+    }
+
+    li .buttons, .subtasks li .buttons {
+        margin-left: 0;
+        margin-top: 5px; /* Space after name */
     }
 
     .subtasks {
