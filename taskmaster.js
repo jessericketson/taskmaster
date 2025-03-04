@@ -249,6 +249,27 @@ async function editSubtask(taskIndex, subtaskName) {
     }
 }
 
+// Delete task
+async function deleteTask(index) {
+    if (confirm(`Are you sure you want to delete "${tasks[index].name}"?`)) {
+        tasks.splice(index, 1);
+        await saveTasks(tasks);
+        renderTasks();
+    }
+}
+
+// Delete subtask
+async function deleteSubtask(taskIndex, subtaskName) {
+    if (confirm(`Are you sure you want to delete "${subtaskName}"?`)) {
+        const subIndex = tasks[taskIndex].subtasks.findIndex(sub => (typeof sub === "string" ? sub : sub.name) === subtaskName);
+        if (subIndex !== -1) {
+            tasks[taskIndex].subtasks.splice(subIndex, 1);
+            await saveTasks(tasks);
+            renderTasks();
+        }
+    }
+}
+
 // Calendar rendering
 let calendar;
 function renderCalendar() {
@@ -479,13 +500,9 @@ async function saveNewSubtask(taskIndex) {
         tasks[taskIndex].subtasks.push(subtaskName);
         await saveTasks(tasks);
         renderTasks();
-        closePopup(document.querySelector('.popup .popup-content button:nth-child(3)'));
+        closePopup(document.querySelector('.popup .popup-content button:nth-child(3)')); // Close popup
+        toggleSubtasks(taskIndex, true); // Keep subtasks dropdown open
     }
-}
-
-function closePopup(button) {
-    const popup = button.closest('.popup');
-    if (popup) popup.remove();
 }
 
 // Add task (popup, matching Add Subtask, insert above Add Task box)
@@ -506,7 +523,7 @@ function showAddTaskPopup() {
 async function saveNewTask() {
     const input = document.getElementById("new-task-input");
     const taskName = input.value.trim().split(" ").map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(" ");
-    if (taskName) {
+    if (taskName) { // Check if taskName is not empty after trimming
         const taskList = document.getElementById("task-list");
         const addTaskLi = taskList.querySelector("li:last-child"); // Find the "Add Task" li
         const newTask = {
@@ -518,13 +535,19 @@ async function saveNewTask() {
         tasks.splice(tasks.length - 1, 0, newTask); // Insert before the last (Add Task) element
         await saveTasks(tasks);
         renderTasks(); // Ensure UI updates immediately
-        closePopup(document.querySelector('.popup .popup-content button:nth-child(3)'));
+        closePopup(document.querySelector('.popup .popup-content button:nth-child(3)')); // Close popup
     } else {
-        console.error("Task name is empty or invalid");
+        console.error("Task name is empty or invalid after trimming");
+        alert("Please enter a valid task name."); // Notify user for better UX
     }
 }
 
-// Render task list
+function closePopup(button) {
+    const popup = button.closest('.popup');
+    if (popup) popup.remove();
+}
+
+// Render task list (update to use only one "+" button for Add Task at the bottom)
 function renderTasks() {
     const taskList = document.getElementById("task-list");
     if (!taskList) {
@@ -575,11 +598,12 @@ function renderTasks() {
             taskList.appendChild(li);
         }
     });
+    // Add only one "+" button for Add Task at the bottom of the task list
     const addTaskLi = document.createElement("li");
     addTaskLi.innerHTML = `
         <div class="task-header">
             <span></span> <!-- Empty span for alignment -->
-            <button class="add-task-button">+</button>
+            <button class="add-task-button" onclick="showAddTaskPopup()">+</button>
         </div>
     `;
     taskList.appendChild(addTaskLi);
@@ -631,7 +655,7 @@ document.getElementById("pause-btn").addEventListener("click", pauseTimer);
 document.getElementById("finish-btn").addEventListener("click", finishTimer);
 document.getElementById("time-up").addEventListener("click", () => adjustTime("up"));
 document.getElementById("time-down").addEventListener("click", () => adjustTime("down"));
-document.querySelector('.add-task-button').addEventListener('click', showAddTaskPopup);
+// No need for separate event listener for .add-task-button here, as it's handled in renderTasks
 
 // Initial setup
 Promise.all([fetchTasks(), fetchCompletedTasks()]).then(([taskData, completedData]) => {
