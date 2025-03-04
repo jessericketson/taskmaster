@@ -27,38 +27,42 @@ body {
 }
 
 .main-content {
-    flex: 1;
+    flex: 1; /* Take remaining space */
     display: flex;
-    flex-direction: row;
+    flex-direction: row; /* Keep row for desktop */
     gap: 20px;
     height: 100%;
 }
 
 .top-row {
-    flex: 1;
+    flex: 1; /* Grow to fill left side */
     display: flex;
     flex-direction: column;
     gap: 20px;
 }
 
 .right-column {
-    width: 400px;
+    width: 400px; /* Fixed width */
     display: flex;
     flex-direction: column;
     gap: 20px;
     height: 100%;
+    min-width: 0; /* Prevent overflow */
 }
 
 .header {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column; /* Stack controls and timer vertically */
+    gap: 15px;
+    align-items: center; /* Center items */
 }
 
 .controls {
     display: flex;
     gap: 15px;
     flex-wrap: wrap;
+    justify-content: center; /* Center buttons */
+    width: 100%; /* Ensure full width */
 }
 
 button {
@@ -115,7 +119,7 @@ button.delete:hover {
 
 #task-btn {
     background: #ffca28;
-    width: 100%;
+    width: 100%; /* Full width for prominence */
     margin-bottom: 20px;
 }
 
@@ -141,6 +145,8 @@ textarea {
 
 .task-input {
     margin-top: 20px;
+    display: flex;
+    gap: 10px;
 }
 
 .suggestion {
@@ -155,6 +161,7 @@ textarea {
     align-items: center;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
     position: relative;
+    width: 100%; /* Ensure full width */
 }
 
 .suggestion::before {
@@ -185,17 +192,22 @@ textarea {
     letter-spacing: 1px;
     height: 48px;
     line-height: 48px;
+    text-align: center;
 }
 
 .comment-section {
     margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .calendar {
     padding: 20px;
     background: #303030;
     border-radius: 12px;
-    flex: 1;
+    flex: 1; /* Grow to fill available space */
+    min-height: 400px; /* Ensure minimum visibility */
     overflow-y: auto;
 }
 
@@ -370,7 +382,7 @@ li {
     margin: 10px 0;
     border-radius: 8px;
     display: flex;
-    flex-direction: column; /* Stack header and subtasks vertically */
+    flex-direction: column;
     transition: background 0.3s ease;
     cursor: pointer;
     position: relative;
@@ -394,13 +406,13 @@ li:hover {
 li .task-header {
     width: 100%;
     display: flex;
-    justify-content: space-between; /* Push buttons to the right */
+    justify-content: space-between;
     align-items: center;
 }
 
 li .task-header .buttons {
     display: flex;
-    gap: 5px; /* Space between edit and delete */
+    gap: 5px;
 }
 
 li .task-header .delete,
@@ -414,7 +426,7 @@ li:hover .task-header .edit {
 }
 
 .subtasks {
-    margin-top: 10px; /* Space below task header */
+    margin-top: 10px;
     padding: 0;
     display: none;
     background: #252525;
@@ -430,19 +442,19 @@ li:hover .task-header .edit {
     padding: 10px;
     margin: 5px 0;
     display: flex;
-    flex-direction: column; /* Stack subtask content vertically */
+    flex-direction: column;
 }
 
 .subtasks li .subtask-header {
     width: 100%;
     display: flex;
-    justify-content: space-between; /* Push buttons to the right */
+    justify-content: space-between;
     align-items: center;
 }
 
 .subtasks li .subtask-header .buttons {
     display: flex;
-    gap: 5px; /* Space between edit and delete */
+    gap: 5px;
 }
 
 .subtasks li .subtask-header .delete,
@@ -471,25 +483,22 @@ button.add-subtask:hover {
     background: #00897b;
 }
 
-/* Existing styles remain unchanged until the media query */
-/* ... [previous CSS content] ... */
-
 @media (max-width: 768px) {
     .container {
-        flex-direction: column; /* Stack sidebar and main content vertically */
-        margin: 0; /* Remove side margins for full width */
-        height: auto; /* Allow natural height */
+        flex-direction: column;
+        margin: 0;
+        height: auto;
     }
 
     .sidebar {
-        width: 100%; /* Full width on mobile */
-        margin-bottom: 10px; /* Less spacing */
-        padding: 10px; /* Smaller padding */
-        height: auto; /* Natural height */
+        width: 100%;
+        margin-bottom: 10px;
+        padding: 10px;
+        height: auto;
     }
 
     .main-content {
-        flex-direction: column; /* Stack top-row and right-column */
+        flex-direction: column;
         width: 100%;
         padding: 10px;
     }
@@ -499,22 +508,27 @@ button.add-subtask:hover {
     }
 
     .right-column {
-        width: 100%; /* Full width on mobile */
-        height: auto; /* Stack naturally */
+        width: 100%;
+        height: auto;
+    }
+
+    .calendar {
+        height: 400px; /* Fixed height for mobile */
+        min-height: unset;
     }
 
     .task-details, .progress-box {
-        height: auto; /* Allow content to dictate height */
+        height: auto;
         margin-top: 10px;
     }
 
     .timer {
-        font-size: 2em; /* Smaller but readable */
+        font-size: 2em;
     }
 
     .header {
         flex-direction: column;
-        align-items: center; /* Center buttons and timer */
+        align-items: center;
     }
 
     .controls, .task-input, .comment-section, .suggestion {
@@ -524,10 +538,10 @@ button.add-subtask:hover {
     }
 
     button, input, textarea {
-        width: 100%; /* Full width buttons and inputs */
-        max-width: 300px; /* Slightly smaller than before */
-        padding: 10px; /* Consistent touch targets */
-        margin: 5px 0; /* Space between elements */
+        width: 100%;
+        max-width: 300px;
+        padding: 10px;
+        margin: 5px 0;
     }
 
     .time-adjust {
@@ -535,17 +549,12 @@ button.add-subtask:hover {
         gap: 10px;
     }
 
-    .calendar {
-        height: 400px; /* Fixed height for scrolling, adjust as needed */
+    li {
         padding: 10px;
     }
 
-    li {
-        padding: 10px; /* Smaller padding */
-    }
-
     .subtasks {
-        margin-top: 5px; /* Less spacing */
+        margin-top: 5px;
     }
 
     .subtasks li {
