@@ -1,6 +1,6 @@
-const socket = io(); // Initialize Socket.IO client
+const socket = io();
 
-// Initial tasks array (default if DB empty or fails)
+// Initial tasks array (default if DB empty)
 let tasks = [
     { name: "Exercise", subtasks: ["Swimming", "Running", "App Guided Exercise", "Gym", "Swimming + Running", "Running + Gym", "Swimming + Gym"], prob: 1, color: "#ff6b6b" },
     { name: "Drum Practice", subtasks: ["Free Practice", { name: "Specific Skills Practice", subtasks: ["Hands", "Feet", "Beats", "Learning Songs"] }], prob: 1, color: "#4ecdc4" },
@@ -19,7 +19,7 @@ let currentTask = null;
 let timer = 0;
 let isPaused = false;
 let interval = null;
-let completedTasks = []; // Will be fetched from DB
+let completedTasks = [];
 let lastClickedTask = null;
 const today = new Date();
 
@@ -88,7 +88,7 @@ async function saveCompletedTask(task) {
     }
 }
 
-// Random task generator with robust subtask handling
+// Random task generator
 function generateTask() {
     console.log("Generate Task clicked", { tasks: tasks.length });
     if (tasks.length === 0) {
@@ -161,7 +161,7 @@ function startTimer() {
         if (!isPaused) {
             timer++;
             document.getElementById("timer").textContent = formatTime(timer);
-            socket.emit('timerUpdate', { timer, isPaused, currentTask }); // Send to server
+            socket.emit('timerUpdate', { timer, isPaused, currentTask });
         }
     }, 1000);
     document.getElementById("pause-btn").disabled = false;
@@ -172,7 +172,7 @@ function startTimer() {
 function pauseTimer() {
     isPaused = !isPaused;
     document.getElementById("pause-btn").textContent = isPaused ? "Resume" : "Pause";
-    socket.emit('timerUpdate', { timer, isPaused, currentTask }); // Update other clients
+    socket.emit('timerUpdate', { timer, isPaused, currentTask });
 }
 
 function finishTimer() {
@@ -185,18 +185,17 @@ function finishTimer() {
 
 async function saveComment() {
     currentTask.comment = document.getElementById("task-comment").value;
-    await saveCompletedTask(currentTask); // Save to DB
-    // Fetch updated completed tasks to ensure local state matches DB
-    const updatedCompletedTasks = await fetchCompletedTasks();
-    completedTasks = updatedCompletedTasks.length ? updatedCompletedTasks : completedTasks;
+    await saveCompletedTask(currentTask); // Save to DB first
     tasks.find(t => t.name === currentTask.task).prob = Math.max(0.1, tasks.find(t => t.name === currentTask.task).prob * 0.8);
-    await saveTasks(tasks);
+    await saveTasks(tasks); // Then save tasks with updated prob
+    const updatedCompletedTasks = await fetchCompletedTasks(); // Fetch latest completed tasks
+    completedTasks = updatedCompletedTasks.length ? updatedCompletedTasks : completedTasks;
     resetTimer();
     document.getElementById("comment-section").style.display = "none";
     document.getElementById("task-comment").value = "";
-    const currentView = calendar.view.type;
-    const currentDate = calendar.view.activeStart;
-    calendar.destroy();
+    const currentView = calendar ? calendar.view.type : 'timeGridDay';
+    const currentDate = calendar ? calendar.view.activeStart : new Date();
+    if (calendar) calendar.destroy();
     renderCalendar();
     calendar.changeView(currentView, currentDate);
     updateTaskDetails();
@@ -250,7 +249,7 @@ async function editSubtask(taskIndex, subtaskName) {
     }
 }
 
-// Calendar rendering with task details below
+// Calendar rendering
 let calendar;
 function renderCalendar() {
     const calendarEl = document.getElementById("calendar");
@@ -365,17 +364,17 @@ function updateProgressBox(viewType) {
     switch (viewType) {
         case "timeGridDay":
             startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            maxSeconds = 8 * 3600; // 8 hours
+            maxSeconds = 8 * 3600;
             title = "Daily Progress";
             break;
         case "timeGridWeek":
             startDate = new Date(now.setDate(now.getDate() - now.getDay()));
-            maxSeconds = 56 * 3600; // 56 hours
+            maxSeconds = 56 * 3600;
             title = "Weekly Progress";
             break;
         case "dayGridMonth":
             startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-            maxSeconds = 224 * 3600; // 224 hours
+            maxSeconds = 224 * 3600;
             title = "Monthly Progress";
             break;
         default:
@@ -397,7 +396,7 @@ function updateProgressBox(viewType) {
         taskProgress[key].completed += t.duration;
     });
 
-    const pixelsPerSecond = 1200 / maxSeconds; // Scale to 1200px
+    const pixelsPerSecond = 1200 / maxSeconds;
     for (const [task, data] of Object.entries(taskProgress)) {
         const completedPixels = Math.min(data.completed * pixelsPerSecond, 1200);
         const suggestedPixels = Math.min(data.suggested * pixelsPerSecond, 1200);
@@ -414,7 +413,7 @@ function updateProgressBox(viewType) {
     }
 }
 
-// Weekly report with comments and progress
+// Weekly report
 function generateWeeklyReport() {
     const now = new Date();
     const weekStart = new Date(now.setDate(now.getDate() - now.getDay()));
@@ -424,7 +423,7 @@ function generateWeeklyReport() {
 
     let report = `
         Weekly Report (Week of ${weekStart.toDateString()}):
-       "For more information on using Node.js with MongoDB Atlas on Render, see https://render.com/docs/deploy-node-express-app#using-mongodb-atlas-with-render"        - Total Hours: ${totalTime.toFixed(2)} / 40 (Goal: 8 hours/day x 5 days)
+        - Total Hours: ${totalTime.toFixed(2)} / 40 (Goal: 8 hours/day x 5 days)
         - Exercise Sessions: ${exerciseCount} (Goal: 1/day)
         Suggestions:
         - ${totalTime < 40 ? "Increase daily activity to meet 8-hour goal." : "Great job meeting your time goal!"}
@@ -480,10 +479,10 @@ async function deleteTask(index) {
     tasks.splice(index, 1);
     await saveTasks(tasks);
     renderTasks();
-    updateProgressBox(calendar.view.type);
+    updateProgressBox(calendar ? calendar.view.type : 'timeGridDay');
 }
 
-// Add subtask dynamically
+// Add subtask
 async function addSubtask(index) {
     const subtaskName = prompt("Enter subtask name:");
     if (subtaskName) {
@@ -501,7 +500,7 @@ async function deleteSubtask(taskIndex, subtaskName) {
     renderTasks();
 }
 
-// Render task list with collapsible subtasks and color bands
+// Render task list
 function renderTasks() {
     const taskList = document.getElementById("task-list");
     taskList.innerHTML = "";
@@ -556,7 +555,7 @@ function toggleSubtasks(index, collapseOthers = false) {
     }
 }
 
-// Sync state from localStorage on load (temporary fallback)
+// Sync state from localStorage (temporary)
 function loadState() {
     const savedTask = localStorage.getItem("currentTask");
     if (savedTask) {
@@ -590,7 +589,7 @@ document.getElementById("finish-btn").addEventListener("click", finishTimer);
 document.getElementById("time-up").addEventListener("click", () => adjustTime("up"));
 document.getElementById("time-down").addEventListener("click", () => adjustTime("down"));
 
-// Initial setup with MongoDB
+// Initial setup
 Promise.all([fetchTasks(), fetchCompletedTasks()]).then(([taskData, completedData]) => {
     console.log('Initial tasks from DB:', taskData);
     console.log('Initial completed tasks from DB:', completedData);
@@ -606,12 +605,10 @@ Promise.all([fetchTasks(), fetchCompletedTasks()]).then(([taskData, completedDat
     loadState();
     setTimeout(() => {
         fetchTasks().then(data => {
-            console.log('Retry tasks:', data);
             tasks = data.length ? data : tasks;
             renderTasks();
         });
         fetchCompletedTasks().then(data => {
-            console.log('Retry completed tasks:', data);
             completedTasks = data.length ? data : [];
             renderCalendar();
             updateProgressBox('timeGridDay');
@@ -628,7 +625,7 @@ socket.on('tasksUpdated', (updatedTasks) => {
 socket.on('completedTasksUpdated', (updatedCompletedTasks) => {
     completedTasks = updatedCompletedTasks;
     renderCalendar();
-    updateProgressBox(calendar.view.type);
+    updateProgressBox(calendar ? calendar.view.type : 'timeGridDay');
 });
 
 socket.on('timerUpdate', (data) => {
