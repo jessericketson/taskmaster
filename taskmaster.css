@@ -22,8 +22,9 @@ body {
     padding: 20px;
     border-radius: 12px; /* Ensure full rounded corners */
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-    height: 100%;
-    overflow-y: auto;
+    height: auto; /* Allow natural height, prevent overflow */
+    max-height: calc(100vh - 30px); /* Match container height */
+    overflow-y: auto; /* Enable vertical scrolling */
     display: flex;
     flex-direction: column;
     gap: 20px; /* Space between button and task list */
@@ -80,8 +81,9 @@ body {
     align-items: center;
     gap: 20px;
     height: 48px; /* Fixed height for consistency */
-    width: 100%; /* Full width, no constraints */
+    width: 100%; /* Full width, matching .calendar */
     max-width: 100%; /* Constrain to prevent overflow */
+    overflow-x: hidden; /* Prevent horizontal spill */
 }
 
 .controls {
@@ -175,9 +177,9 @@ textarea {
     align-items: center;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
     position: relative;
-    width: 100%; /* Full width, no constraints */
+    width: 100%; /* Full width, matching .calendar */
     max-width: 100%; /* Constrain to prevent overflow */
-    overflow-x: hidden; /* Prevent horizontal spill, but allow full width */
+    overflow-x: hidden; /* Prevent horizontal spill */
 }
 
 .suggestion::before {
@@ -230,7 +232,7 @@ textarea {
     flex: 1; /* Grow to fill available space in middle column */
     min-height: 400px; /* Ensure minimum visibility */
     overflow-y: auto;
-    width: 100%; /* Full width, matching .suggestion */
+    width: 100%; /* Full width, matching .header and .suggestion */
     max-width: 100%; /* Constrain to prevent overflow */
     overflow-x: hidden; /* Prevent horizontal spill */
     display: block; /* Ensure visibility */
@@ -454,6 +456,7 @@ li .task-header span {
 li .buttons {
     display: flex;
     gap: 5px;
+    padding: 2px 0; /* Add padding for consistency */
 }
 
 li .delete,
@@ -501,6 +504,7 @@ li:hover .edit {
 .subtasks li .buttons {
     display: flex;
     gap: 5px;
+    padding: 2px 0; /* Add padding for consistency */
 }
 
 .subtasks li .delete,
@@ -523,6 +527,12 @@ button.delete, button.add-subtask, button.edit {
 
 button.add-subtask {
     background: #26a69a;
+    padding: 6px;
+    width: 26px;
+    height: 26px;
+    line-height: 14px;
+    font-size: 14px;
+    margin-left: auto; /* Move to right of column */
 }
 
 button.add-subtask:hover {
@@ -549,6 +559,63 @@ button.add-subtask:hover {
     transform: translateY(-2px);
 }
 
+/* Popup Styling */
+.popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.popup-content {
+    background: #252525;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.popup-content h3 {
+    margin: 0 0 10px;
+    color: #00d4ff;
+    font-size: 1.4em;
+}
+
+.popup-content input {
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #37474f;
+    background: #303030;
+    color: #e0e0e0;
+    width: 100%;
+}
+
+.popup-content button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background: #00d4ff;
+    color: #1a1a1a;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    font-weight: 1000;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.popup-content button:hover {
+    background: #00b8e6;
+}
+
 /* Mobile Formatting Improvements */
 @media (max-width: 768px) {
     .container {
@@ -562,6 +629,7 @@ button.add-subtask:hover {
         margin-bottom: 10px;
         padding: 10px;
         height: auto;
+        max-height: calc(100vh - 20px); /* Adjust for mobile */
     }
 
     .main-content {
@@ -641,9 +709,9 @@ button.add-subtask:hover {
         margin-top: 5px; /* Space after name */
     }
 
-    .add-task-button {
+    .add-task-button, button.add-subtask {
         margin-left: 0;
-        margin-top: 5px; /* Stack below tasks on mobile */
+        margin-top: 5px; /* Stack below tasks/subtasks on mobile */
     }
 
     .subtasks {
@@ -652,5 +720,10 @@ button.add-subtask:hover {
 
     .subtasks li {
         padding: 6px; /* Reduced padding */
+    }
+
+    .popup-content {
+        width: 90%; /* Fuller width on mobile */
+        padding: 15px; /* Reduced padding */
     }
 }

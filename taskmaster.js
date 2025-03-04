@@ -413,101 +413,6 @@ function updateProgressBox(viewType) {
     }
 }
 
-function deleteCalendarTask(index) {
-    const scrollTop = document.getElementById("calendar").scrollTop;
-    const currentView = calendar.view.type;
-    const currentDate = calendar.view.activeStart;
-    completedTasks.splice(index, 1);
-    calendar.destroy();
-    renderCalendar();
-    calendar.changeView(currentView, currentDate);
-    document.getElementById("calendar").scrollTop = scrollTop;
-    updateTaskDetails();
-    updateProgressBox(currentView);
-}
-
-function updateTaskDetails() {
-    const details = document.getElementById("task-details");
-    if (lastClickedTask) {
-        const durationH = Math.floor(lastClickedTask.duration / 3600).toString().padStart(2, "0");
-        const durationM = Math.floor((lastClickedTask.duration % 3600) / 60).toString().padStart(2, "0");
-        const durationS = (lastClickedTask.duration % 60).toString().padStart(2, "0");
-        const durationStr = `${durationH}:${durationM}:${durationS}`;
-        details.innerHTML = `
-            <h3>${lastClickedTask.title}</h3>
-            <p><strong>Start:</strong> ${new Date(lastClickedTask.start).toLocaleString()}</p>
-            <p><strong>End:</strong> ${new Date(lastClickedTask.end).toLocaleString()}</p>
-            <p><strong>Total Time:</strong> ${durationStr}</p>
-            <p><strong>Comment:</strong> ${lastClickedTask.comment || "No comment provided"}</p>
-            <button onclick="deleteCalendarTask(${lastClickedTask.index})">Delete Task</button>
-        `;
-    } else {
-        details.innerHTML = `
-            <h3>No Task Selected</h3>
-            <p>Select a completed task from the calendar to view details.</p>
-        `;
-    }
-}
-
-function updateProgressBox(viewType) {
-    const progressList = document.getElementById("progress-list");
-    const progressTitle = document.getElementById("progress-title");
-    progressList.innerHTML = "";
-    const now = new Date();
-    let startDate, maxSeconds, title;
-
-    switch (viewType) {
-        case "timeGridDay":
-            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            maxSeconds = 8 * 3600;
-            title = "Daily Progress";
-            break;
-        case "timeGridWeek":
-            startDate = new Date(now.setDate(now.getDate() - now.getDay()));
-            maxSeconds = 56 * 3600;
-            title = "Weekly Progress";
-            break;
-        case "dayGridMonth":
-            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-            maxSeconds = 224 * 3600;
-            title = "Monthly Progress";
-            break;
-        default:
-            startDate = new Date(now.setDate(now.getDate() - now.getDay()));
-            maxSeconds = 56 * 3600;
-            title = "Weekly Progress";
-    }
-
-    progressTitle.textContent = title;
-
-    const periodTasks = completedTasks.filter(t => new Date(t.start) >= startDate);
-    const taskProgress = {};
-    periodTasks.forEach(t => {
-        const key = `${t.task}${t.subtask ? " - " + t.subtask : ""}`;
-        if (!taskProgress[key]) {
-            const taskInfo = tasks.find(task => task.name === t.task);
-            taskProgress[key] = { completed: 0, suggested: t.time, color: taskInfo ? taskInfo.color : "#888888" };
-        }
-        taskProgress[key].completed += t.duration;
-    });
-
-    const pixelsPerSecond = 1200 / maxSeconds;
-    for (const [task, data] of Object.entries(taskProgress)) {
-        const completedPixels = Math.min(data.completed * pixelsPerSecond, 1200);
-        const suggestedPixels = Math.min(data.suggested * pixelsPerSecond, 1200);
-        const progressItem = document.createElement("div");
-        progressItem.className = "progress-item";
-        progressItem.innerHTML = `
-            <span>${task}</span>
-            <div class="progress-bar">
-                <div class="suggested" style="width: ${suggestedPixels}px; background: ${data.color}; opacity: 0.5;"></div>
-                <div class="completed" style="width: ${completedPixels}px; background: ${data.color};"></div>
-            </div>
-        `;
-        progressList.appendChild(progressItem);
-    }
-}
-
 // Weekly report
 function generateWeeklyReport() {
     const now = new Date();
@@ -583,7 +488,7 @@ function closePopup(button) {
     if (popup) popup.remove();
 }
 
-// Add task (popup)
+// Add task (popup, matching Add Subtask, insert above Add Task box)
 function showAddTaskPopup() {
     const popup = document.createElement('div');
     popup.className = 'popup';
@@ -602,12 +507,15 @@ async function saveNewTask() {
     const input = document.getElementById("new-task-input");
     const taskName = input.value.trim().split(" ").map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(" ");
     if (taskName) {
-        tasks.push({
+        const taskList = document.getElementById("task-list");
+        const addTaskLi = taskList.querySelector("li:last-child"); // Find the "Add Task" li
+        const newTask = {
             name: taskName,
             subtasks: [],
             prob: 1,
             color: `#${Math.floor(Math.random() * 16777215).toString(16)}`
-        });
+        };
+        tasks.splice(tasks.length - 1, 0, newTask); // Insert before the last (Add Task) element
         await saveTasks(tasks);
         renderTasks();
         closePopup(document.querySelector('.popup .popup-content button:nth-child(3)'));
@@ -623,41 +531,56 @@ function renderTasks() {
     }
     taskList.innerHTML = "";
     tasks.forEach((task, index) => {
-        console.log("Rendering task:", task.name);
-        const li = document.createElement("li");
-        li.style.setProperty('--task-color', task.color);
-        li.innerHTML = `
-            <div class="task-header">
-                <span onclick="toggleSubtasks(${index}, true); selectTask('${task.name}')">${task.name}</span>
-                <div class="buttons">
-                    <button class="edit" onclick="editTask(${index})">E</button>
-                    <button class="delete" onclick="deleteTask(${index})">X</button>
-                </div>
-            </div>
-        `;
-        const ul = document.createElement("ul");
-        ul.id = `subtasks-${index}`;
-        ul.className = "subtasks";
-        task.subtasks.forEach(sub => {
-            const subLi = document.createElement("li");
-            const subName = typeof sub === "string" ? sub : sub.name;
-            subLi.innerHTML = `
-                <div class="subtask-header">
-                    <span onclick="selectTask('${task.name}', '${subName}')">${subName}</span>
+        if (index < tasks.length - 1) { // Skip the last element (Add Task)
+            console.log("Rendering task:", task.name);
+            const li = document.createElement("li");
+            li.style.setProperty('--task-color', task.color);
+            li.innerHTML = `
+                <div class="task-header">
+                    <span onclick="toggleSubtasks(${index}, true); selectTask('${task.name}')">${task.name}</span>
                     <div class="buttons">
-                        <button class="edit" onclick="editSubtask(${index}, '${subName}')">E</button>
-                        <button class="delete" onclick="deleteSubtask(${index}, '${subName}')">X</button>
+                        <button class="edit" onclick="editTask(${index})">E</button>
+                        <button class="delete" onclick="deleteTask(${index})">X</button>
                     </div>
                 </div>
             `;
-            ul.appendChild(subLi);
-        });
-        const addLi = document.createElement("li");
-        addLi.innerHTML = `<button class="add-subtask" onclick="addSubtask(${index})">+</button>`;
-        ul.appendChild(addLi);
-        li.appendChild(ul);
-        taskList.appendChild(li);
+            const ul = document.createElement("ul");
+            ul.id = `subtasks-${index}`;
+            ul.className = "subtasks";
+            task.subtasks.forEach(sub => {
+                const subName = typeof sub === "string" ? sub : sub.name;
+                const subLi = document.createElement("li");
+                subLi.innerHTML = `
+                    <div class="subtask-header">
+                        <span onclick="selectTask('${task.name}', '${subName}')">${subName}</span>
+                        <div class="buttons">
+                            <button class="edit" onclick="editSubtask(${index}, '${subName}')">E</button>
+                            <button class="delete" onclick="deleteSubtask(${index}, '${subName}')">X</button>
+                        </div>
+                    </div>
+                `;
+                ul.appendChild(subLi);
+            });
+            const addLi = document.createElement("li");
+            addLi.innerHTML = `
+                <div class="subtask-header">
+                    <span></span> <!-- Empty span for alignment -->
+                    <button class="add-subtask" onclick="addSubtask(${index})">+</button>
+                </div>
+            `;
+            ul.appendChild(addLi);
+            li.appendChild(ul);
+            taskList.appendChild(li);
+        }
     });
+    const addTaskLi = document.createElement("li");
+    addTaskLi.innerHTML = `
+        <div class="task-header">
+            <span></span> <!-- Empty span for alignment -->
+            <button class="add-task-button">+</button>
+        </div>
+    `;
+    taskList.appendChild(addTaskLi);
 }
 
 function toggleSubtasks(index, collapseOthers = false) {
