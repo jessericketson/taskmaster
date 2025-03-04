@@ -471,40 +471,84 @@ button.add-subtask:hover {
     background: #00897b;
 }
 
+/* Existing styles remain unchanged until the media query */
+/* ... [previous CSS content] ... */
+
 @media (max-width: 768px) {
+    .container {
+        flex-direction: column; /* Stack sidebar and main content vertically */
+        margin: 0; /* Remove side margins for full width */
+        height: auto; /* Allow natural height */
+    }
+
     .sidebar {
-        width: 100%;
-        margin-bottom: 20px;
-        height: auto;
+        width: 100%; /* Full width on mobile */
+        margin-bottom: 10px; /* Less spacing */
+        padding: 10px; /* Smaller padding */
+        height: auto; /* Natural height */
     }
+
     .main-content {
-        flex-direction: column;
-        height: auto;
-    }
-    .top-row, .right-column {
+        flex-direction: column; /* Stack top-row and right-column */
         width: 100%;
-        height: auto;
+        padding: 10px;
     }
+
+    .top-row {
+        width: 100%;
+    }
+
+    .right-column {
+        width: 100%; /* Full width on mobile */
+        height: auto; /* Stack naturally */
+    }
+
+    .task-details, .progress-box {
+        height: auto; /* Allow content to dictate height */
+        margin-top: 10px;
+    }
+
     .timer {
-        font-size: 2em;
+        font-size: 2em; /* Smaller but readable */
     }
+
     .header {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: center; /* Center buttons and timer */
     }
+
     .controls, .task-input, .comment-section, .suggestion {
         flex-direction: column;
         align-items: center;
-    }
-    button, input, textarea {
         width: 100%;
-        max-width: 320px;
     }
+
+    button, input, textarea {
+        width: 100%; /* Full width buttons and inputs */
+        max-width: 300px; /* Slightly smaller than before */
+        padding: 10px; /* Consistent touch targets */
+        margin: 5px 0; /* Space between elements */
+    }
+
     .time-adjust {
         display: flex;
-        gap: 12px;
+        gap: 10px;
     }
-    .calendar, .task-details, .progress-box {
-        height: auto;
+
+    .calendar {
+        height: 400px; /* Fixed height for scrolling, adjust as needed */
+        padding: 10px;
+    }
+
+    li {
+        padding: 10px; /* Smaller padding */
+    }
+
+    .subtasks {
+        margin-top: 5px; /* Less spacing */
+    }
+
+    .subtasks li {
+        padding: 8px;
     }
 }
