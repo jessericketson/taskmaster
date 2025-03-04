@@ -500,7 +500,7 @@ async function saveNewSubtask(taskIndex) {
         tasks[taskIndex].subtasks.push(subtaskName);
         await saveTasks(tasks);
         renderTasks();
-        closePopup(document.querySelector('.popup .popup-content button:nth-child(3)')); // Ensure popup closes
+        closePopup(document.querySelector('.popup .popup-content button:nth-child(3)')); // Close popup
         toggleSubtasks(taskIndex, true); // Keep subtasks dropdown open
     } else {
         console.error("Subtask name is empty or invalid after trimming");
@@ -508,8 +508,13 @@ async function saveNewSubtask(taskIndex) {
     }
 }
 
-// Add task (popup, matching Add Subtask, insert above Add Task box)
+// Add task (popup, revert to working state)
 function showAddTaskPopup() {
+    // Check if a popup already exists to prevent duplicates
+    if (document.querySelector('.popup')) {
+        console.warn("Popup already exists, closing existing one.");
+        closePopup(document.querySelector('.popup .popup-content button:nth-child(3)'));
+    }
     const popup = document.createElement('div');
     popup.className = 'popup';
     popup.innerHTML = `
@@ -526,7 +531,7 @@ function showAddTaskPopup() {
 async function saveNewTask() {
     const input = document.getElementById("new-task-input");
     const taskName = input.value.trim().split(" ").map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(" ");
-    if (taskName) { // Check if taskName is not empty after trimming
+    if (taskName) {
         const taskList = document.getElementById("task-list");
         if (!taskList) {
             console.error("Task list element not found");
@@ -556,7 +561,7 @@ function closePopup(button) {
     }
 }
 
-// Render task list (ensure consistent state and event binding)
+// Render task list (ensure single "+" button for Add Task, no duplicates)
 function renderTasks() {
     const taskList = document.getElementById("task-list");
     if (!taskList) {
@@ -617,24 +622,27 @@ function renderTasks() {
     `;
     taskList.appendChild(addTaskLi);
 
-    // Rebind event listeners for .add-task-button to ensure consistent behavior
+    // Ensure only one event listener for .add-task-button
     const addTaskButton = taskList.querySelector('.add-task-button');
     if (addTaskButton) {
-        addTaskButton.removeEventListener('click', showAddTaskPopup); // Remove existing listener to prevent duplicates
-        addTaskButton.addEventListener('click', showAddTaskPopup);
+        // Remove any existing listeners to prevent duplicates
+        const oldElement = addTaskButton.cloneNode(true);
+        addTaskButton.parentNode.replaceChild(oldElement, addTaskButton);
+        oldElement.addEventListener('click', showAddTaskPopup);
     }
 }
 
+// Toggle subtasks (ensure state is maintained)
 function toggleSubtasks(index, collapseOthers = false) {
     const subtasks = document.getElementById(`subtasks-${index}`);
     if (subtasks) {
         const isActive = subtasks.classList.contains("active");
         if (collapseOthers) {
             document.querySelectorAll('.subtasks.active').forEach(el => {
-                if (el !== subtasks) el.classList.remove("closePopup(this)"); // Ensure no other subtasks are closed
+                if (el !== subtasks) el.classList.remove("active");
             });
         }
-        subtasks.classList.toggle("active", !isActive); // Toggle the current subtasks state
+        subtasks.classList.toggle("active", !isActive);
     }
 }
 
@@ -671,7 +679,7 @@ document.getElementById("pause-btn").addEventListener("click", pauseTimer);
 document.getElementById("finish-btn").addEventListener("click", finishTimer);
 document.getElementById("time-up").addEventListener("click", () => adjustTime("up"));
 document.getElementById("time-down").addEventListener("click", () => adjustTime("down"));
-// No need for separate event listener for .add-task-button here, as it's handled in renderTasks
+// Removed separate .add-task-button event listener, handled in renderTasks
 
 // Initial setup
 Promise.all([fetchTasks(), fetchCompletedTasks()]).then(([taskData, completedData]) => {
