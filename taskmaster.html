@@ -18,7 +18,7 @@
             <ul id="task-list"></ul>
         </div>
         <div class="main-content">
-            <div class="controls-container">
+            <div class="middle-column">
                 <div class="header">
                     <div class="controls">
                         <button id="accept-btn" disabled>Accept</button>
@@ -34,13 +34,11 @@
                         <button id="time-down" disabled>-</button>
                     </div>
                 </div>
+                <div class="calendar" id="calendar"></div>
                 <div class="comment-section" id="comment-section" style="display: none;">
                     <textarea id="task-comment" placeholder="Add a comment..."></textarea>
                     <button onclick="saveComment()">Save</button>
                 </div>
-            </div>
-            <div class="calendar-container">
-                <div class="calendar" id="calendar"></div>
             </div>
             <div class="right-column">
                 <div class="task-details" id="task-details">

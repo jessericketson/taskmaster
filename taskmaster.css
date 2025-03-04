@@ -53,15 +53,15 @@ body {
 .main-content {
     flex: 1; /* Take remaining space */
     display: flex;
-    flex-direction: row; /* Three columns: controls, calendar, details/progress */
+    flex-direction: row; /* Three columns */
     gap: 20px;
     height: 100%;
 }
 
-.controls-container {
-    flex: 1; /* Left middle column for controls and suggestion */
+.middle-column {
+    flex: 2; /* Larger middle column for controls, suggestion, and calendar */
     display: flex;
-    flex-direction: column;
+    flex-direction: column; /* Stack vertically */
     gap: 20px;
     height: 100%;
 }
@@ -209,22 +209,11 @@ textarea {
     gap: 10px;
 }
 
-.calendar-container {
-    flex: 2; /* Larger middle column for calendar */
-    background: #252525;
-    padding: 0;
-    border-radius: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    height: 100%;
-}
-
 .calendar {
     padding: 20px;
     background: #303030;
     border-radius: 12px;
-    flex: 1; /* Grow to fill available space */
+    flex: 1; /* Grow to fill available space in middle column */
     min-height: 400px; /* Ensure minimum visibility */
     overflow-y: auto;
 }
@@ -531,7 +520,7 @@ button.add-subtask:hover {
         padding: 10px;
     }
 
-    .controls-container, .calendar-container, .right-column {
+    .middle-column, .right-column {
         width: 100%;
     }
 
