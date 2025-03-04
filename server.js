@@ -14,8 +14,6 @@ let db;
 
 async function connectToMongo() {
     const client = new MongoClient(uri, {
-        tls: true,
-        minTLSVersion: 'TLSv1.2',
         serverSelectionTimeoutMS: 10000,
         connectTimeoutMS: 15000,
         retryWrites: true,
