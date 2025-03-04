@@ -13,6 +13,7 @@ let tasks = [
 ];
 
 // State
+
 let currentTask = null;
 let timer = 0;
 let isPaused = false;
@@ -38,6 +39,19 @@ async function fetchTasks() {
     }
   }
 
+  async function fetchCompletedTasks() {
+    try {
+      const response = await fetch('/api/completed-tasks');
+      if (!response.ok) throw new Error('Failed to fetch completed tasks');
+      const data = await response.json();
+      console.log('Fetched completed tasks:', data);
+      return data;
+    } catch (err) {
+      console.error('Error fetching completed tasks:', err);
+      return [];
+    }
+  }
+
 async function saveTasks(tasksToSave) {
   try {
     const response = await fetch('/api/tasks', {
@@ -52,6 +66,88 @@ async function saveTasks(tasksToSave) {
     return false;
   }
 }
+
+async function saveCompletedTask(task) {
+    try {
+      const response = await fetch('/api/completed-tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(task),
+      });
+      if (!response.ok) throw new Error('Failed to save completed task');
+      return true;
+    } catch (err) {
+      console.error('Error saving completed task:', err);
+      return false;
+    }
+  }
+
+  async function saveCompletedTask(task) {
+    try {
+      const response = await fetch('/api/completed-tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(task),
+      });
+      if (!response.ok) throw new Error('Failed to save completed task');
+      return true;
+    } catch (err) {
+      console.error('Error saving completed task:', err);
+      return false;
+    }
+  }
+  
+  // Update saveComment to persist to DB
+  async function saveComment() {
+    currentTask.comment = document.getElementById("task-comment").value;
+    await saveCompletedTask(currentTask); // Save to DB
+    completedTasks.push(currentTask); // Update local array
+    tasks.find(t => t.name === currentTask.task).prob = Math.max(0.1, tasks.find(t => t.name === currentTask.task).prob * 0.8);
+    await saveTasks(tasks);
+    resetTimer();
+    document.getElementById("comment-section").style.display = "none";
+    document.getElementById("task-comment").value = "";
+    const currentView = calendar.view.type;
+    const currentDate = calendar.view.activeStart;
+    calendar.destroy();
+    renderCalendar();
+    calendar.changeView(currentView, currentDate);
+    updateTaskDetails();
+    updateProgressBox(currentView);
+  }
+  
+  // Initial setup with both tasks and completed tasks
+  Promise.all([fetchTasks(), fetchCompletedTasks()]).then(([taskData, completedData]) => {
+    tasks = taskData.length ? taskData : tasks;
+    completedTasks = completedData.length ? completedData : completedTasks;
+    console.log('Initial tasks:', tasks);
+    console.log('Initial completed tasks:', completedTasks);
+    renderTasks();
+    renderCalendar();
+    loadState();
+  }).catch(err => {
+    console.error('Initial fetch failed:', err);
+    renderTasks();
+    renderCalendar();
+    loadState();
+    setTimeout(() => {
+      fetchTasks().then(data => {
+        tasks = data.length ? data : tasks;
+        renderTasks();
+      });
+      fetchCompletedTasks().then(data => {
+        completedTasks = data.length ? data : completedTasks;
+        renderCalendar();
+        updateProgressBox('timeGridDay');
+      });
+    }, 5000);
+  });
+  
+  socket.on('completedTasksUpdated', (updatedCompletedTasks) => {
+    completedTasks = updatedCompletedTasks;
+    renderCalendar();
+    updateProgressBox(calendar.view.type);
+  });
 
 // Random task generator with robust subtask handling
 function generateTask() {
