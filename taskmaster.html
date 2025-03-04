@@ -50,13 +50,13 @@
         </div>
     </div>
 
-    <!-- Popup for Add Task -->
+    <!-- Popup for Add Task (matching Add Subtask) -->
     <div id="addTaskPopup" class="popup" style="display: none;">
         <div class="popup-content">
             <h3>Add New Task</h3>
             <input type="text" id="new-task-input" placeholder="Enter task name...">
             <button onclick="saveNewTask()">Add</button>
-            <button onclick="closeAddTaskPopup()">Cancel</button>
+            <button onclick="closePopup(this)">Cancel</button>
         </div>
     </div>
 
