@@ -54,3 +54,15 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+async function connectToMongo() {
+    const client = new MongoClient(uri);
+    try {
+      await client.connect();
+      db = client.db('taskmasterdb');
+      console.log('Connected to MongoDB');
+    } catch (err) {
+      console.error('MongoDB connection error:', err);
+      throw err; // Ensure error is visible
+    }
+  }
