@@ -64,6 +64,8 @@ body {
     flex-direction: column; /* Stack vertically */
     gap: 20px;
     height: 100%;
+    max-width: 100%; /* Prevent overflow */
+    overflow-x: hidden; /* Ensure no horizontal spill */
 }
 
 .header {
@@ -75,7 +77,8 @@ body {
     justify-content: space-between; /* Push buttons left, timer right */
     align-items: center;
     gap: 20px;
-    height: 48px; /* Match height for consistency */
+    height: 48px; /* Fixed height for consistency */
+    max-width: 100%; /* Prevent overflow */
 }
 
 .controls {
@@ -159,19 +162,21 @@ textarea {
 }
 
 .suggestion {
-    font-size: 1.3em;
-    padding: 8px 20px;
+    font-size: 1.1em; /* Slightly smaller font to fit in reduced height */
+    padding: 6px 20px; /* Reduced padding for compactness */
     background: #303030;
     border-radius: 10px;
     color: #e0e0e0;
-    height: 48px; /* Match .header height */
-    min-height: unset; /* Override default min-height */
+    height: 48px; /* Match .header height exactly for consistency */
+    min-height: unset; /* Override any default min-height */
     display: flex;
     justify-content: space-between;
     align-items: center;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
     position: relative;
     width: 100%; /* Match .header and .calendar width */
+    max-width: 100%; /* Prevent overflow to the right */
+    overflow-x: hidden; /* Ensure no horizontal spill */
 }
 
 .suggestion::before {
@@ -219,6 +224,8 @@ textarea {
     min-height: 400px; /* Ensure minimum visibility */
     overflow-y: auto;
     width: 100%; /* Match .header and .suggestion width */
+    max-width: 100%; /* Prevent overflow */
+    overflow-x: hidden; /* Ensure no horizontal spill */
 }
 
 .right-column {
@@ -588,6 +595,11 @@ button.add-subtask:hover {
     li .buttons, .subtasks li .buttons {
         margin-left: 0;
         margin-top: 5px; /* Space after name */
+    }
+
+    .suggestion {
+        height: auto; /* Allow natural height on mobile */
+        padding: 8px 20px; /* Default padding */
     }
 
     .subtasks {
