@@ -45,35 +45,38 @@ app.use(express.static(path.join(__dirname)));
 app.use(express.json());
 
 app.get('/api/tasks', async (req, res) => {
-  try {
-    if (!db) {
-      console.warn('Database not connected yet');
-      return res.status(503).json({ error: 'Database not connected, retrying...' });
+    try {
+      if (!db) {
+        console.warn('Database not connected yet');
+        return res.status(503).json({ error: 'Database not connected, retrying...' });
+      }
+      const tasks = await db.collection('tasks').find().toArray();
+      console.log('GET /api/tasks returning:', tasks); // Debug
+      res.json(tasks);
+    } catch (err) {
+      console.error('GET /api/tasks error:', err);
+      res.status(500).json({ error: 'Failed to fetch tasks' });
     }
-    const tasks = await db.collection('tasks').find().toArray();
-    res.json(tasks);
-  } catch (err) {
-    console.error('GET /api/tasks error:', err);
-    res.status(500).json({ error: 'Failed to fetch tasks' });
-  }
-});
-
-app.post('/api/tasks', async (req, res) => {
-  try {
-    if (!db) {
-      console.warn('Database not connected yet');
-      return res.status(503).json({ error: 'Database not connected, retrying...' });
+  });
+  
+  app.post('/api/tasks', async (req, res) => {
+    try {
+      if (!db) {
+        console.warn('Database not connected yet');
+        return res.status(503).json({ error: 'Database not connected, retrying...' });
+      }
+      const tasks = req.body;
+      console.log('POST /api/tasks received:', tasks); // Debug
+      await db.collection('tasks').deleteMany({});
+      await db.collection('tasks').insertMany(tasks);
+      console.log('Tasks saved to DB');
+      io.emit('tasksUpdated', tasks);
+      res.json({ success: true });
+    } catch (err) {
+      console.error('POST /api/tasks error:', err);
+      res.status(500).json({ error: 'Failed to save tasks' });
     }
-    const tasks = req.body;
-    await db.collection('tasks').deleteMany({});
-    await db.collection('tasks').insertMany(tasks);
-    io.emit('tasksUpdated', tasks);
-    res.json({ success: true });
-  } catch (err) {
-    console.error('POST /api/tasks error:', err);
-    res.status(500).json({ error: 'Failed to save tasks' });
-  }
-});
+  });
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'taskmaster.html'));
