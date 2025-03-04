@@ -23,15 +23,20 @@ const today = new Date();
 
 // API Functions
 async function fetchTasks() {
-  try {
-    const response = await fetch('/api/tasks');
-    if (!response.ok) throw new Error('Failed to fetch tasks');
-    return await response.json();
-  } catch (err) {
-    console.error('Error fetching tasks:', err);
-    return [];
+    try {
+      const response = await fetch('/api/tasks');
+      if (!response.ok) {
+        console.error('Fetch response not OK:', response.status, response.statusText);
+        throw new Error('Failed to fetch tasks');
+      }
+      const data = await response.json();
+      console.log('Fetched tasks:', data); // Debug
+      return data;
+    } catch (err) {
+      console.error('Error fetching tasks:', err);
+      return [];
+    }
   }
-}
 
 async function saveTasks(tasksToSave) {
   try {
@@ -547,18 +552,24 @@ document.getElementById("time-down").addEventListener("click", () => adjustTime(
 
 // Initial setup with MongoDB
 fetchTasks().then(data => {
-  tasks = data.length ? data : tasks; // Use DB data or default
-  completedTasks = []; // For now, completed tasks are local; add DB storage later if needed
-  renderTasks();
-  renderCalendar();
-  loadState(); // Temporary for currentTask
-}).catch(() => {
-  tasks = tasks || [];
-  renderTasks();
-  renderCalendar();
-  loadState();
-});
-
+    console.log('Initial tasks from DB:', data);
+    tasks = data.length ? data : tasks; // Use DB data or default
+    completedTasks = [];
+    renderTasks();
+    renderCalendar();
+    loadState();
+  }).catch(err => {
+    console.error('Initial fetch failed:', err);
+    renderTasks(); // Render default anyway
+    renderCalendar();
+    loadState();
+    setTimeout(() => fetchTasks().then(data => {
+      console.log('Retry tasks:', data);
+      tasks = data.length ? data : tasks;
+      renderTasks();
+    }), 5000);
+  });
+  
 setInterval(() => {
   if (new Date().getDay() === 1 && new Date().getHours() === 8) generateWeeklyReport();
 }, 3600000);
