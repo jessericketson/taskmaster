@@ -4,14 +4,15 @@
     "description": "Task management app",
     "main": "server.js",
     "scripts": {
-      "start": "node server.js"
+        "start": "node server.js"
     },
-    "dependencies": {
-      "express": "^4.18.2",
-      "mongodb": "^6.3.0",
-      "socket.io": "^4.7.5"
-    },
-    "engines": {
-      "node": "18.x" 
-    }
+   "dependencies": {
+    "express": "^4.18.2",
+    "mongodb": "^6.3.0",
+    "socket.io": "^4.7.5",
+    "dotenv": "^16.4.5" 
+  },
+  "engines": {
+    "node": "18.x"
   }
+}
