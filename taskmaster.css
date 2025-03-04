@@ -190,12 +190,14 @@ textarea {
     display: flex;
     gap: 10px; /* More spacing between + and - buttons */
     margin-left: 10px; /* Push buttons away from text for better alignment */
+   
 }
 
 .time-adjust button {
     padding: 6px 12px;
     background: #26a69a;
     margin: 0;
+    height: 35px;
 }
 
 .time-adjust button:hover {
