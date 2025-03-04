@@ -26,12 +26,12 @@ body {
     overflow-y: auto;
     display: flex;
     flex-direction: column;
+    gap: 20px; /* Space between button and task list */
 }
 
 #task-btn {
     background: #ffca28;
-    width: 100%; /* Full width in sidebar */
-    margin-bottom: 20px;
+    width: 100%;
     padding: 14px 28px;
     border: none;
     border-radius: 8px;
@@ -209,15 +209,6 @@ textarea {
     gap: 10px;
 }
 
-.calendar {
-    padding: 20px;
-    background: #303030;
-    border-radius: 12px;
-    flex: 1; /* Grow to fill available space */
-    min-height: 400px; /* Ensure minimum visibility */
-    overflow-y: auto;
-}
-
 .calendar-container {
     flex: 2; /* Larger middle column for calendar */
     background: #252525;
@@ -227,6 +218,15 @@ textarea {
     flex-direction: column;
     gap: 20px;
     height: 100%;
+}
+
+.calendar {
+    padding: 20px;
+    background: #303030;
+    border-radius: 12px;
+    flex: 1; /* Grow to fill available space */
+    min-height: 400px; /* Ensure minimum visibility */
+    overflow-y: auto;
 }
 
 .right-column {
