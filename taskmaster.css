@@ -27,7 +27,7 @@ body {
     overflow-y: auto; /* Enable vertical scrolling */
     display: flex;
     flex-direction: column;
-    gap: 20px; /* Space between button and task list */
+    gap: 20px; /* Space between elements, maintain layout */
 }
 
 #task-btn {
@@ -403,8 +403,10 @@ ul {
     list-style: none;
     padding: 0;
     margin: 0;
-    flex: 1;
+    /* Remove flex: 1 to prevent over-expansion */
     display: block; /* Ensure visibility */
+    max-height: calc(100% - 48px - 20px); /* Adjust for #task-btn height and gap */
+    overflow-y: auto; /* Allow scrolling within ul if needed */
 }
 
 li {
