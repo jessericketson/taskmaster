@@ -24,25 +24,42 @@ body {
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
     height: 100%;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+#task-btn {
+    background: #ffca28;
+    width: 100%; /* Full width in sidebar */
+    margin-bottom: 20px;
+    padding: 14px 28px;
+    border: none;
+    border-radius: 8px;
+    color: #1a1a1a;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+    font-weight: 1000;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    height: 48px;
+    line-height: 20px;
+}
+
+#task-btn:hover {
+    background: #ffb300;
+    transform: translateY(-2px);
 }
 
 .main-content {
     flex: 1; /* Take remaining space */
     display: flex;
-    flex-direction: row;
+    flex-direction: row; /* Three columns: controls, calendar, details/progress */
     gap: 20px;
     height: 100%;
 }
 
-.top-row {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-.right-column {
-    width: 400px;
+.controls-container {
+    flex: 1; /* Left middle column for controls and suggestion */
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -50,11 +67,14 @@ body {
 }
 
 .header {
+    background: #252525;
+    padding: 20px;
+    border-radius: 12px;
     display: flex;
-    flex-direction: row; /* Horizontal layout for controls and timer */
-    justify-content: space-between; /* Push Generate Task left, timer right */
+    flex-direction: row; /* Horizontal layout for buttons and timer */
+    justify-content: space-between; /* Push buttons left, timer right */
     align-items: center;
-    gap: 20px; /* Space between controls and timer */
+    gap: 20px;
 }
 
 .controls {
@@ -113,15 +133,6 @@ button.delete {
 
 button.delete:hover {
     background: #d32f2f;
-}
-
-#task-btn {
-    background: #ffca28;
-    width: auto; /* Revert to default width to fit in controls */
-}
-
-#task-btn:hover {
-    background: #ffb300;
 }
 
 input, textarea {
@@ -202,9 +213,28 @@ textarea {
     padding: 20px;
     background: #303030;
     border-radius: 12px;
-    flex: 1; /* Grow to fill available space in main-content */
+    flex: 1; /* Grow to fill available space */
     min-height: 400px; /* Ensure minimum visibility */
     overflow-y: auto;
+}
+
+.calendar-container {
+    flex: 2; /* Larger middle column for calendar */
+    background: #252525;
+    padding: 0;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    height: 100%;
+}
+
+.right-column {
+    width: 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    height: 100%;
 }
 
 .fc-scroller {
@@ -370,6 +400,8 @@ textarea {
 ul {
     list-style: none;
     padding: 0;
+    margin: 0;
+    flex: 1;
 }
 
 li {
@@ -499,13 +531,17 @@ button.add-subtask:hover {
         padding: 10px;
     }
 
-    .top-row {
+    .controls-container, .calendar-container, .right-column {
         width: 100%;
     }
 
-    .right-column {
-        width: 100%;
-        height: auto;
+    .header {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .controls {
+        justify-content: center;
     }
 
     .calendar {
@@ -520,11 +556,6 @@ button.add-subtask:hover {
 
     .timer {
         font-size: 2em;
-    }
-
-    .header {
-        flex-direction: column;
-        align-items: center;
     }
 
     .controls, .task-input, .comment-section, .suggestion {
