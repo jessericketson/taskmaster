@@ -127,7 +127,7 @@ function generateTask() {
     currentTask = { task: selectedTask.name, subtask: subtaskName, time, start: null, end: null, comment: "", color: selectedTask.color };
     document.getElementById("task-text").innerHTML = `${selectedTask.name}${subtaskName ? " - " + subtaskName : ""} (${time / 60} hours)`;
     document.getElementById("suggestion").style.setProperty('--task-color', selectedTask.color);
-    document.getElementById("accept-btn").disabled = false;
+    document.getElementById("start-btn").disabled = false;
     document.getElementById("time-up").disabled = false;
     document.getElementById("time-down").disabled = false;
 }
@@ -141,7 +141,7 @@ function selectTask(taskName, subtask = null) {
     currentTask = { task: taskName, subtask: subtaskName, time, start: null, end: null, comment: "", color: task.color };
     document.getElementById("task-text").innerHTML = `${taskName}${subtaskName ? " - " + subtaskName : ""} (${time / 60} hours)`;
     document.getElementById("suggestion").style.setProperty('--task-color', task.color);
-    document.getElementById("accept-btn").disabled = false;
+    document.getElementById("start-btn").disabled = false;
     document.getElementById("time-up").disabled = false;
     document.getElementById("time-down").disabled = false;
 }
@@ -166,7 +166,7 @@ function startTimer() {
     }, 1000);
     document.getElementById("pause-btn").disabled = false;
     document.getElementById("finish-btn").disabled = false;
-    document.getElementById("accept-btn").disabled = true;
+    document.getElementById("start-btn").disabled = true;
 }
 
 function pauseTimer() {
@@ -210,7 +210,7 @@ function resetTimer() {
     document.getElementById("finish-btn").disabled = true;
     document.getElementById("task-text").innerHTML = "Select a Task to Begin";
     document.getElementById("suggestion").style.setProperty('--task-color', '#888888');
-    document.getElementById("accept-btn").disabled = true;
+    document.getElementById("start-btn").disabled = true;
     document.getElementById("time-up").disabled = true;
     document.getElementById("time-down").disabled = true;
     currentTask = null;
@@ -413,6 +413,101 @@ function updateProgressBox(viewType) {
     }
 }
 
+function deleteCalendarTask(index) {
+    const scrollTop = document.getElementById("calendar").scrollTop;
+    const currentView = calendar.view.type;
+    const currentDate = calendar.view.activeStart;
+    completedTasks.splice(index, 1);
+    calendar.destroy();
+    renderCalendar();
+    calendar.changeView(currentView, currentDate);
+    document.getElementById("calendar").scrollTop = scrollTop;
+    updateTaskDetails();
+    updateProgressBox(currentView);
+}
+
+function updateTaskDetails() {
+    const details = document.getElementById("task-details");
+    if (lastClickedTask) {
+        const durationH = Math.floor(lastClickedTask.duration / 3600).toString().padStart(2, "0");
+        const durationM = Math.floor((lastClickedTask.duration % 3600) / 60).toString().padStart(2, "0");
+        const durationS = (lastClickedTask.duration % 60).toString().padStart(2, "0");
+        const durationStr = `${durationH}:${durationM}:${durationS}`;
+        details.innerHTML = `
+            <h3>${lastClickedTask.title}</h3>
+            <p><strong>Start:</strong> ${new Date(lastClickedTask.start).toLocaleString()}</p>
+            <p><strong>End:</strong> ${new Date(lastClickedTask.end).toLocaleString()}</p>
+            <p><strong>Total Time:</strong> ${durationStr}</p>
+            <p><strong>Comment:</strong> ${lastClickedTask.comment || "No comment provided"}</p>
+            <button onclick="deleteCalendarTask(${lastClickedTask.index})">Delete Task</button>
+        `;
+    } else {
+        details.innerHTML = `
+            <h3>No Task Selected</h3>
+            <p>Select a completed task from the calendar to view details.</p>
+        `;
+    }
+}
+
+function updateProgressBox(viewType) {
+    const progressList = document.getElementById("progress-list");
+    const progressTitle = document.getElementById("progress-title");
+    progressList.innerHTML = "";
+    const now = new Date();
+    let startDate, maxSeconds, title;
+
+    switch (viewType) {
+        case "timeGridDay":
+            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            maxSeconds = 8 * 3600;
+            title = "Daily Progress";
+            break;
+        case "timeGridWeek":
+            startDate = new Date(now.setDate(now.getDate() - now.getDay()));
+            maxSeconds = 56 * 3600;
+            title = "Weekly Progress";
+            break;
+        case "dayGridMonth":
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            maxSeconds = 224 * 3600;
+            title = "Monthly Progress";
+            break;
+        default:
+            startDate = new Date(now.setDate(now.getDate() - now.getDay()));
+            maxSeconds = 56 * 3600;
+            title = "Weekly Progress";
+    }
+
+    progressTitle.textContent = title;
+
+    const periodTasks = completedTasks.filter(t => new Date(t.start) >= startDate);
+    const taskProgress = {};
+    periodTasks.forEach(t => {
+        const key = `${t.task}${t.subtask ? " - " + t.subtask : ""}`;
+        if (!taskProgress[key]) {
+            const taskInfo = tasks.find(task => task.name === t.task);
+            taskProgress[key] = { completed: 0, suggested: t.time, color: taskInfo ? taskInfo.color : "#888888" };
+        }
+        taskProgress[key].completed += t.duration;
+    });
+
+    const pixelsPerSecond = 1200 / maxSeconds;
+    for (const [task, data] of Object.entries(taskProgress)) {
+        const completedPixels = Math.min(data.completed * pixelsPerSecond, 1200);
+        const suggestedPixels = Math.min(data.suggested * pixelsPerSecond, 1200);
+        const progressItem = document.createElement("div");
+        progressItem.className = "progress-item";
+        progressItem.innerHTML = `
+            <span>${task}</span>
+            <div class="progress-bar">
+                <div class="suggested" style="width: ${suggestedPixels}px; background: ${data.color}; opacity: 0.5;"></div>
+                <div class="completed" style="width: ${completedPixels}px; background: ${data.color};"></div>
+            </div>
+        `;
+        progressList.appendChild(progressItem);
+    }
+}
+
 // Weekly report
 function generateWeeklyReport() {
     const now = new Date();
@@ -457,9 +552,54 @@ function generateWeeklyReport() {
     if (now.getDay() === 1) tasks.forEach(t => t.prob = 1);
 }
 
-// Add new task
-async function addTask() {
-    const input = document.getElementById("new-task");
+// Add subtask (popup)
+function addSubtask(index) {
+    const popup = document.createElement('div');
+    popup.className = 'popup';
+    popup.innerHTML = `
+        <div class="popup-content">
+            <h3>Add New Subtask</h3>
+            <input type="text" id="new-subtask-input" placeholder="Enter subtask name...">
+            <button onclick="saveNewSubtask(${index})">Add</button>
+            <button onclick="closePopup(this)">Cancel</button>
+        </div>
+    `;
+    document.body.appendChild(popup);
+}
+
+async function saveNewSubtask(taskIndex) {
+    const input = document.getElementById("new-subtask-input");
+    const subtaskName = input.value.trim().split(" ").map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(" ");
+    if (subtaskName) {
+        tasks[taskIndex].subtasks.push(subtaskName);
+        await saveTasks(tasks);
+        renderTasks();
+        closePopup(document.querySelector('.popup .popup-content button:nth-child(3)'));
+    }
+}
+
+function closePopup(button) {
+    const popup = button.closest('.popup');
+    if (popup) popup.remove();
+}
+
+// Add task (popup)
+function showAddTaskPopup() {
+    const popup = document.createElement('div');
+    popup.className = 'popup';
+    popup.innerHTML = `
+        <div class="popup-content">
+            <h3>Add New Task</h3>
+            <input type="text" id="new-task-input" placeholder="Enter task name...">
+            <button onclick="saveNewTask()">Add</button>
+            <button onclick="closePopup(this)">Cancel</button>
+        </div>
+    `;
+    document.body.appendChild(popup);
+}
+
+async function saveNewTask() {
+    const input = document.getElementById("new-task-input");
     const taskName = input.value.trim().split(" ").map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(" ");
     if (taskName) {
         tasks.push({
@@ -468,43 +608,19 @@ async function addTask() {
             prob: 1,
             color: `#${Math.floor(Math.random() * 16777215).toString(16)}`
         });
-        input.value = ""; // Clear input
         await saveTasks(tasks);
         renderTasks();
+        closePopup(document.querySelector('.popup .popup-content button:nth-child(3)'));
     }
-}
-
-document.querySelector('.add-task-button').addEventListener('click', addTask);
-
-// Remove task
-async function deleteTask(index) {
-    tasks.splice(index, 1);
-    await saveTasks(tasks);
-    renderTasks();
-    updateProgressBox(calendar ? calendar.view.type : 'timeGridDay');
-}
-
-// Add subtask
-async function addSubtask(index) {
-    const subtaskName = prompt("Enter subtask name:");
-    if (subtaskName) {
-        const formattedName = subtaskName.split(" ").map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(" ");
-        tasks[index].subtasks.push(formattedName);
-        await saveTasks(tasks);
-        renderTasks();
-    }
-}
-
-// Remove subtask
-async function deleteSubtask(taskIndex, subtaskName) {
-    tasks[taskIndex].subtasks = tasks[taskIndex].subtasks.filter(sub => (typeof sub === "string" ? sub : sub.name) !== subtaskName);
-    await saveTasks(tasks);
-    renderTasks();
 }
 
 // Render task list
 function renderTasks() {
     const taskList = document.getElementById("task-list");
+    if (!taskList) {
+        console.error("Task list element not found");
+        return;
+    }
     taskList.innerHTML = "";
     tasks.forEach((task, index) => {
         console.log("Rendering task:", task.name);
@@ -567,7 +683,7 @@ function loadState() {
         document.getElementById("task-text").innerHTML = `${currentTask.task}${currentTask.subtask ? " - " + currentTask.subtask : ""} (${currentTask.time / 60} hours)`;
         document.getElementById("suggestion").style.setProperty('--task-color', currentTask.color);
         document.getElementById("timer").textContent = formatTime(timer);
-        document.getElementById("accept-btn").disabled = true;
+        document.getElementById("start-btn").disabled = true;
         document.getElementById("pause-btn").disabled = false;
         document.getElementById("finish-btn").disabled = false;
         document.getElementById("pause-btn").textContent = isPaused ? "Resume" : "Pause";
@@ -585,11 +701,12 @@ function loadState() {
 
 // Event listeners
 document.getElementById("task-btn").addEventListener("click", () => generateTask());
-document.getElementById("accept-btn").addEventListener("click", startTimer);
+document.getElementById("start-btn").addEventListener("click", startTimer);
 document.getElementById("pause-btn").addEventListener("click", pauseTimer);
 document.getElementById("finish-btn").addEventListener("click", finishTimer);
 document.getElementById("time-up").addEventListener("click", () => adjustTime("up"));
 document.getElementById("time-down").addEventListener("click", () => adjustTime("down"));
+document.querySelector('.add-task-button').addEventListener('click', showAddTaskPopup);
 
 // Initial setup
 Promise.all([fetchTasks(), fetchCompletedTasks()]).then(([taskData, completedData]) => {
@@ -638,7 +755,7 @@ socket.on('timerUpdate', (data) => {
         document.getElementById("pause-btn").textContent = isPaused ? "Resume" : "Pause";
         document.getElementById("pause-btn").disabled = false;
         document.getElementById("finish-btn").disabled = false;
-        document.getElementById("accept-btn").disabled = true;
+        document.getElementById("start-btn").disabled = true;
     }
 });
 

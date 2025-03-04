@@ -20,7 +20,7 @@ body {
     width: 320px;
     background: #252525;
     padding: 20px;
-    border-radius: 12px;
+    border-radius: 12px; /* Ensure full rounded corners */
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
     height: 100%;
     overflow-y: auto;
@@ -66,8 +66,8 @@ body {
     gap: 20px;
     height: 100%;
     width: 100%; /* Full width, no constraints */
-    max-width: none; /* Remove max-width to prevent clipping */
-    overflow-x: visible; /* Allow full width, no clipping */
+    max-width: 100%; /* Constrain to prevent overflow */
+    overflow-x: hidden; /* Prevent horizontal spill */
 }
 
 .header {
@@ -81,7 +81,7 @@ body {
     gap: 20px;
     height: 48px; /* Fixed height for consistency */
     width: 100%; /* Full width, no constraints */
-    max-width: none; /* Remove max-width to preserve rounded corners */
+    max-width: 100%; /* Constrain to prevent overflow */
 }
 
 .controls {
@@ -159,9 +159,7 @@ textarea {
 }
 
 .task-input {
-    margin-top: 20px;
-    display: flex;
-    gap: 10px;
+    display: none; /* Hide the old task input */
 }
 
 .suggestion {
@@ -178,8 +176,8 @@ textarea {
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
     position: relative;
     width: 100%; /* Full width, no constraints */
-    max-width: none; /* Remove max-width to preserve rounded corners */
-    overflow-x: visible; /* Allow full width, no clipping */
+    max-width: 100%; /* Constrain to prevent overflow */
+    overflow-x: hidden; /* Prevent horizontal spill, but allow full width */
 }
 
 .suggestion::before {
@@ -233,8 +231,9 @@ textarea {
     min-height: 400px; /* Ensure minimum visibility */
     overflow-y: auto;
     width: 100%; /* Full width, matching .suggestion */
-    max-width: none; /* Remove max-width to preserve rounded corners */
-    overflow-x: visible; /* Allow full width, no clipping */
+    max-width: 100%; /* Constrain to prevent overflow */
+    overflow-x: hidden; /* Prevent horizontal spill */
+    display: block; /* Ensure visibility */
 }
 
 .right-column {
@@ -410,6 +409,7 @@ ul {
     padding: 0;
     margin: 0;
     flex: 1;
+    display: block; /* Ensure visibility */
 }
 
 li {
@@ -541,6 +541,7 @@ button.add-subtask:hover {
     color: #1a1a1a;
     cursor: pointer;
     transition: background 0.3s ease, transform 0.2s ease;
+    margin-left: auto; /* Move to right of task list */
 }
 
 .add-task-button:hover {
@@ -638,6 +639,11 @@ button.add-subtask:hover {
     li .buttons, .subtasks li .buttons {
         margin-left: 0;
         margin-top: 5px; /* Space after name */
+    }
+
+    .add-task-button {
+        margin-left: 0;
+        margin-top: 5px; /* Stack below tasks on mobile */
     }
 
     .subtasks {
