@@ -500,8 +500,11 @@ async function saveNewSubtask(taskIndex) {
         tasks[taskIndex].subtasks.push(subtaskName);
         await saveTasks(tasks);
         renderTasks();
-        closePopup(document.querySelector('.popup .popup-content button:nth-child(3)')); // Close popup
+        closePopup(document.querySelector('.popup .popup-content button:nth-child(3)')); // Ensure popup closes
         toggleSubtasks(taskIndex, true); // Keep subtasks dropdown open
+    } else {
+        console.error("Subtask name is empty or invalid after trimming");
+        alert("Please enter a valid subtask name."); // Notify user for better UX
     }
 }
 
@@ -525,6 +528,10 @@ async function saveNewTask() {
     const taskName = input.value.trim().split(" ").map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(" ");
     if (taskName) { // Check if taskName is not empty after trimming
         const taskList = document.getElementById("task-list");
+        if (!taskList) {
+            console.error("Task list element not found");
+            return;
+        }
         const addTaskLi = taskList.querySelector("li:last-child"); // Find the "Add Task" li
         const newTask = {
             name: taskName,
@@ -544,10 +551,12 @@ async function saveNewTask() {
 
 function closePopup(button) {
     const popup = button.closest('.popup');
-    if (popup) popup.remove();
+    if (popup) {
+        popup.remove(); // Ensure popup is removed from DOM
+    }
 }
 
-// Render task list (update to use only one "+" button for Add Task at the bottom)
+// Render task list (ensure consistent state and event binding)
 function renderTasks() {
     const taskList = document.getElementById("task-list");
     if (!taskList) {
@@ -607,6 +616,13 @@ function renderTasks() {
         </div>
     `;
     taskList.appendChild(addTaskLi);
+
+    // Rebind event listeners for .add-task-button to ensure consistent behavior
+    const addTaskButton = taskList.querySelector('.add-task-button');
+    if (addTaskButton) {
+        addTaskButton.removeEventListener('click', showAddTaskPopup); // Remove existing listener to prevent duplicates
+        addTaskButton.addEventListener('click', showAddTaskPopup);
+    }
 }
 
 function toggleSubtasks(index, collapseOthers = false) {
@@ -615,10 +631,10 @@ function toggleSubtasks(index, collapseOthers = false) {
         const isActive = subtasks.classList.contains("active");
         if (collapseOthers) {
             document.querySelectorAll('.subtasks.active').forEach(el => {
-                if (el !== subtasks) el.classList.remove("active");
+                if (el !== subtasks) el.classList.remove("closePopup(this)"); // Ensure no other subtasks are closed
             });
         }
-        subtasks.classList.toggle("active", !isActive);
+        subtasks.classList.toggle("active", !isActive); // Toggle the current subtasks state
     }
 }
 
