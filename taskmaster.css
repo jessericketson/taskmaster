@@ -5,6 +5,7 @@ body {
     margin: 0;
     padding: 0;
     line-height: 1.6;
+    overflow-x: hidden; /* Prevent horizontal overflow on body */
 }
 
 .container {
@@ -172,7 +173,6 @@ textarea {
     align-items: center;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
     position: relative;
-    
 }
 
 .suggestion::before {
@@ -190,14 +190,12 @@ textarea {
     display: flex;
     gap: 10px; /* More spacing between + and - buttons */
     margin-left: 10px; /* Push buttons away from text for better alignment */
-   
 }
 
 .time-adjust button {
     padding: 6px 12px;
     background: #26a69a;
     margin: 0;
-    height: 35px;
 }
 
 .time-adjust button:hover {
@@ -414,7 +412,7 @@ ul {
 li {
     padding: 14px;
     background: #303030;
-    margin: 10px 0px;
+    margin: 10px 0;
     border-radius: 8px;
     display: flex;
     flex-direction: column; /* Revert to vertical stacking for tasks */
@@ -422,7 +420,6 @@ li {
     transition: background 0.3s ease;
     cursor: pointer;
     position: relative;
-
 }
 
 li::before {
@@ -482,7 +479,7 @@ li:hover .edit {
 
 .subtasks li {
     padding: 10px;
-    margin: 5px 5px;
+    margin: 5px 0;
     display: flex;
     flex-direction: column; /* Revert to vertical stacking for subtasks */
     align-items: flex-start;
@@ -594,7 +591,7 @@ button.add-subtask:hover {
     border: 1px solid #37474f;
     background: #303030;
     color: #e0e0e0;
-   
+    width: 100%;
 }
 
 .popup-content button {
@@ -614,7 +611,7 @@ button.add-subtask:hover {
     background: #00b8e6;
 }
 
-/* Mobile Formatting Improvements */
+/* Mobile Formatting Improvements (Updated for Timer at Top) */
 @media (max-width: 768px) {
     .container {
         flex-direction: column;
@@ -641,52 +638,73 @@ button.add-subtask:hover {
     }
 
     .header {
-        flex-direction: column;
-        align-items: center;
-        padding: 10px; /* Reduced padding for mobile */
-        height: auto; /* Allow natural height */
+        display: none; /* Hide the header on mobile, as timer is now at the top */
     }
 
-    .controls {
-        justify-content: center;
-        flex-direction: column; /* Stack buttons vertically */
-        gap: 10px; /* More spacing on mobile */
-    }
-
+    /* Move timer to the top, centered, full-width */
     .timer {
-        font-size: 2em;
-        margin-top: 10px; /* Space after buttons */
+        order: 1; /* Place timer at the top of .middle-column */
+        font-size: 2em; /* Reduced for mobile, but still prominent */
+        color: #26a69a;
+        font-weight: 700;
+        letter-spacing: 1px;
+        width: 100%; /* Full width */
+        text-align: center; /* Centered horizontally */
+        margin: 10px 0; /* Spacing above and below */
+        padding: 10px; /* Add padding for touch targets */
+        height: auto; /* Allow natural height */
+        line-height: normal; /* Reset line-height for centering */
+        background: #252525; /* Match header background for consistency */
+        border-radius: 12px; /* Match other elements */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add shadow for depth */
     }
 
-    .calendar {
+    .middle-column {
+        display: flex;
+        flex-direction: column;
+        gap: 10px; /* Reduced gap for mobile */
+    }
+
+    .middle-column > .suggestion {
+        order: 2; /* Suggestion box below timer */
+    }
+
+    .middle-column > #task-btn {
+        order: 3; /* Generate Task button beneath suggestion */
+        width: 100%;
+        margin: 0; /* Reset margins for mobile */
+    }
+
+    .middle-column > .controls {
+        order: 4; /* Start, Pause, Finish buttons below Generate Task */
+        justify-content: center;
+        flex-direction: column;
+        gap: 10px;
+        margin: 0; /* Remove default margins */
+        padding: 10px; /* Add padding for touch targets */
+        background: #252525; /* Match header background */
+        border-radius: 12px; /* Match other elements */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add shadow for depth */
+    }
+
+    .middle-column > .calendar {
+        order: 5; /* Calendar below controls */
         height: 300px; /* Reduced height for mobile, more compact */
         min-height: unset;
         padding: 10px; /* Reduced padding */
     }
 
-    .task-details, .progress-box {
+    .middle-column > #task-list {
+        order: 6; /* Task list at the bottom */
+        max-height: calc(50vh - 20px); /* Limit height for scrolling */
+        overflow-y: auto;
+    }
+
+    .right-column .task-details,
+    .right-column .progress-box {
         height: auto;
         margin-top: 10px;
         padding: 10px; /* Reduced padding */
-    }
-
-    .suggestion {
-        height: auto; /* Allow natural height on mobile */
-        padding: 8px 10px; /* Reduced padding for mobile */
-        flex-direction: column; /* Stack text and time adjust */
-        align-items: flex-start; /* Align text left */
-        gap: 5px; /* Space between text and buttons */
-    }
-
-    .time-adjust {
-        margin-left: 0; /* Remove margin on mobile */
-        width: 100%; /* Full width on mobile */
-    }
-
-    .controls, .task-input, .comment-section {
-        flex-direction: column;
-        align-items: center;
-        width: 100%;
     }
 
     button, input, textarea {
@@ -723,5 +741,31 @@ button.add-subtask:hover {
     .popup-content {
         width: 90%; /* Fuller width on mobile */
         padding: 15px; /* Reduced padding */
+    }
+}
+
+/* Desktop Layout (No Changes) */
+@media (min-width: 769px) {
+    .timer {
+        font-size: 3.8em; /* Maintain desktop size */
+        height: 48px;
+        line-height: 48px;
+    }
+
+    .header {
+        display: flex; /* Ensure header is visible on desktop */
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        height: 48px;
+    }
+
+    .middle-column > .suggestion,
+    .middle-column > .header,
+    .middle-column > .calendar,
+    .middle-column > #task-list,
+    .middle-column > #task-btn {
+        order: unset; /* Reset order for desktop */
     }
 }
