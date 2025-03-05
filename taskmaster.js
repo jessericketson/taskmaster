@@ -130,6 +130,7 @@ function generateTask() {
     document.getElementById("start-btn").disabled = false;
     document.getElementById("time-up").disabled = false;
     document.getElementById("time-down").disabled = false;
+    socket.emit('taskGenerated', currentTask); // Broadcast new task to all devices
 }
 
 // Manual task selection
@@ -144,6 +145,7 @@ function selectTask(taskName, subtask = null) {
     document.getElementById("start-btn").disabled = false;
     document.getElementById("time-up").disabled = false;
     document.getElementById("time-down").disabled = false;
+    socket.emit('taskSelected', currentTask); // Broadcast task selection to all devices
 }
 
 // Time adjustment
@@ -152,38 +154,45 @@ function adjustTime(direction) {
     const increment = direction === "up" ? 30 : -30;
     currentTask.time = Math.max(30, currentTask.time + increment);
     document.getElementById("task-text").innerHTML = `${currentTask.task}${currentTask.subtask ? " - " + currentTask.subtask : ""} (${currentTask.time / 60} hours)`;
+    socket.emit('taskAdjusted', currentTask); // Broadcast time adjustment to all devices
 }
 
 // Timer functionality
 function startTimer() {
+    if (!currentTask) return;
     currentTask.start = new Date();
     interval = setInterval(() => {
         if (!isPaused) {
             timer++;
             document.getElementById("timer").textContent = formatTime(timer);
-            socket.emit('timerUpdate', { timer, isPaused, currentTask });
+            socket.emit('timerUpdate', { timer, isPaused, currentTask }); // Broadcast timer update to all devices
         }
     }, 1000);
     document.getElementById("pause-btn").disabled = false;
     document.getElementById("finish-btn").disabled = false;
     document.getElementById("start-btn").disabled = true;
+    socket.emit('timerStarted', { timer, isPaused, currentTask }); // Broadcast timer start
 }
 
 function pauseTimer() {
     isPaused = !isPaused;
     document.getElementById("pause-btn").textContent = isPaused ? "Resume" : "Pause";
-    socket.emit('timerUpdate', { timer, isPaused, currentTask });
+    socket.emit('timerUpdate', { timer, isPaused, currentTask }); // Broadcast pause/resume to all devices
+    socket.emit('timerPaused', { timer, isPaused, currentTask }); // Additional event for pause state
 }
 
 function finishTimer() {
+    if (!currentTask) return;
     clearInterval(interval);
     currentTask.end = new Date();
     currentTask.duration = timer;
     document.getElementById("comment-section").style.display = "flex";
     document.getElementById("finish-btn").disabled = true;
+    socket.emit('timerFinished', { timer, isPaused, currentTask }); // Broadcast timer finish
 }
 
 async function saveComment() {
+    if (!currentTask) return;
     currentTask.comment = document.getElementById("task-comment").value;
     await saveCompletedTask(currentTask); // Save to DB first
     tasks.find(t => t.name === currentTask.task).prob = Math.max(0.1, tasks.find(t => t.name === currentTask.task).prob * 0.8);
@@ -193,13 +202,17 @@ async function saveComment() {
     resetTimer();
     document.getElementById("comment-section").style.display = "none";
     document.getElementById("task-comment").value = "";
-    const currentView = calendar ? calendar.view.type : 'timeGridDay';
-    const currentDate = calendar ? calendar.view.activeStart : new Date();
-    if (calendar) calendar.destroy();
-    renderCalendar();
-    calendar.changeView(currentView, currentDate);
+    if (calendar) {
+        const currentView = calendar.view.type;
+        const currentDate = calendar.view.activeStart;
+        calendar.destroy();
+        renderCalendar();
+        calendar.changeView(currentView, currentDate);
+    }
     updateTaskDetails();
-    updateProgressBox(currentView);
+    updateProgressBox(calendar ? calendar.view.type : 'timeGridDay');
+    socket.emit('taskCompleted', currentTask); // Broadcast completed task
+    socket.emit('completedTasksUpdated', completedTasks); // Broadcast completed tasks update
 }
 
 function resetTimer() {
@@ -214,6 +227,7 @@ function resetTimer() {
     document.getElementById("time-up").disabled = true;
     document.getElementById("time-down").disabled = true;
     currentTask = null;
+    socket.emit('timerReset', { timer, isPaused, currentTask }); // Broadcast timer reset
 }
 
 function formatTime(seconds) {
@@ -230,6 +244,7 @@ async function editTask(index) {
         tasks[index].name = newName.trim().split(" ").map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(" ");
         await saveTasks(tasks);
         renderTasks();
+        socket.emit('tasksUpdated', tasks); // Broadcast tasks update
     }
 }
 
@@ -246,6 +261,7 @@ async function editSubtask(taskIndex, subtaskName) {
         }
         await saveTasks(tasks);
         renderTasks();
+        socket.emit('tasksUpdated', tasks); // Broadcast tasks update
     }
 }
 
@@ -255,6 +271,7 @@ async function deleteTask(index) {
         tasks.splice(index, 1);
         await saveTasks(tasks);
         renderTasks();
+        socket.emit('tasksUpdated', tasks); // Broadcast tasks update
     }
 }
 
@@ -266,6 +283,7 @@ async function deleteSubtask(taskIndex, subtaskName) {
             tasks[taskIndex].subtasks.splice(subIndex, 1);
             await saveTasks(tasks);
             renderTasks();
+            socket.emit('tasksUpdated', tasks); // Broadcast tasks update
         }
     }
 }
@@ -274,69 +292,68 @@ async function deleteSubtask(taskIndex, subtaskName) {
 let calendar;
 function renderCalendar() {
     const calendarEl = document.getElementById("calendar");
-    const scrollTop = calendarEl.scrollTop;
-    calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: "timeGridDay",
-        headerToolbar: {
-            left: "prev,next today",
-            center: "title",
-            right: "dayGridMonth,timeGridWeek,timeGridDay"
-        },
-        slotDuration: '00:30:00',
-        events: completedTasks.map((t, index) => {
-            const taskInfo = tasks.find(task => task.name === t.task);
-            const bgColor = taskInfo ? taskInfo.color : "#888888";
-            return {
-                title: `${t.task}${t.subtask ? " - " + t.subtask : ""}`,
-                start: t.start,
-                end: t.end,
-                backgroundColor: bgColor,
-                borderColor: bgColor,
-                textColor: "#e0e0e0",
-                extendedProps: { index, comment: t.comment, bgColor, duration: t.duration }
-            };
-        }),
-        eventClick: function(info) {
-            lastClickedTask = {
-                title: info.event.title,
-                start: info.event.start,
-                end: info.event.end,
-                comment: info.event.extendedProps.comment,
-                index: info.event.extendedProps.index,
-                duration: info.event.extendedProps.duration
-            };
-            updateTaskDetails();
-        },
-        eventContent: function(arg) {
-            console.log("Rendering event:", arg.event.title, "Color:", arg.event.extendedProps.bgColor);
-            return {
-                html: `
-                    <div style="
-                        color: #e0e0e0;
-                        background: #303030;
-                        border-left: 6px solid ${arg.event.extendedProps.bgColor};
-                        border-radius: 8px;
-                        padding: 6px 8px;
-                        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-                        overflow: hidden;
-                        white-space: nowrap;
-                        text-overflow: ellipsis;
-                        width: 100%;
-                        height: 100%;
-                        display: flex;
-                        align-items: center;
-                        justify-content: flex-start;
-                    ">${arg.event.title}</div>
-                `
-            };
-        },
-        viewClassNames: function(arg) {
-            updateProgressBox(arg.view.type);
-        }
-    });
-    calendar.render();
-    calendarEl.scrollTop = scrollTop;
-    updateProgressBox(calendar.view.type);
+    if (calendarEl) {
+        calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: "timeGridDay",
+            headerToolbar: {
+                left: "prev,next today",
+                center: "title",
+                right: "dayGridMonth,timeGridWeek,timeGridDay"
+            },
+            slotDuration: '00:30:00',
+            events: completedTasks.map((t, index) => {
+                const taskInfo = tasks.find(task => task.name === t.task);
+                const bgColor = taskInfo ? taskInfo.color : "#888888";
+                return {
+                    title: `${t.task}${t.subtask ? " - " + t.subtask : ""}`,
+                    start: t.start,
+                    end: t.end,
+                    backgroundColor: bgColor,
+                    borderColor: bgColor,
+                    textColor: "#e0e0e0",
+                    extendedProps: { index, comment: t.comment, bgColor, duration: t.duration }
+                };
+            }),
+            eventClick: function(info) {
+                lastClickedTask = {
+                    title: info.event.title,
+                    start: info.event.start,
+                    end: info.event.end,
+                    comment: info.event.extendedProps.comment,
+                    index: info.event.extendedProps.index,
+                    duration: info.event.extendedProps.duration
+                };
+                updateTaskDetails();
+            },
+            eventContent: function(arg) {
+                console.log("Rendering event:", arg.event.title, "Color:", arg.event.extendedProps.bgColor);
+                return {
+                    html: `
+                        <div style="
+                            color: #e0e0e0;
+                            background: #303030;
+                            border-left: 6px solid ${arg.event.extendedProps.bgColor};
+                            border-radius: 8px;
+                            padding: 6px 8px;
+                            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                            overflow: hidden;
+                            white-space: nowrap;
+                            text-overflow: ellipsis;
+                            width: 100%;
+                            height: 100%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: flex-start;
+                        ">${arg.event.title}</div>
+                    `
+                };
+            },
+            viewClassNames: function(arg) {
+                updateProgressBox(arg.view.type);
+            }
+        });
+        calendar.render();
+    }
 }
 
 function deleteCalendarTask(index) {
@@ -350,6 +367,7 @@ function deleteCalendarTask(index) {
     document.getElementById("calendar").scrollTop = scrollTop;
     updateTaskDetails();
     updateProgressBox(currentView);
+    socket.emit('completedTasksUpdated', completedTasks); // Broadcast completed tasks update
 }
 
 function updateTaskDetails() {
@@ -502,6 +520,7 @@ async function saveNewSubtask(taskIndex) {
         renderTasks();
         closePopup(document.querySelector('.popup .popup-content button:nth-child(3)')); // Close popup
         toggleSubtasks(taskIndex, true); // Keep subtasks dropdown open
+        socket.emit('tasksUpdated', tasks); // Broadcast tasks update
     } else {
         console.error("Subtask name is empty or invalid after trimming");
         alert("Please enter a valid subtask name."); // Notify user for better UX
@@ -548,6 +567,7 @@ async function saveNewTask() {
         await saveTasks(tasks);
         renderTasks(); // Ensure UI updates immediately
         closePopup(document.querySelector('.popup .popup-content button:nth-child(3)')); // Close popup
+        socket.emit('tasksUpdated', tasks); // Broadcast tasks update
     } else {
         console.error("Task name is empty or invalid after trimming");
         alert("Please enter a valid task name."); // Notify user for better UX
@@ -662,14 +682,13 @@ function loadState() {
         document.getElementById("pause-btn").textContent = isPaused ? "Resume" : "Pause";
         if (!isPaused) {
             interval = setInterval(() => {
-                if (!isPaused) {
-                    timer++;
-                    document.getElementById("timer").textContent = formatTime(timer);
-                    socket.emit('timerUpdate', { timer, isPaused, currentTask });
-                }
+                timer++;
+                document.getElementById("timer").textContent = formatTime(timer);
+                socket.emit('timerUpdate', { timer, isPaused, currentTask }); // Broadcast timer update
             }, 1000);
         }
     }
+    socket.emit('stateLoaded', { timer, isPaused, currentTask }); // Broadcast initial state to sync
 }
 
 // Event listeners
@@ -679,7 +698,6 @@ document.getElementById("pause-btn").addEventListener("click", pauseTimer);
 document.getElementById("finish-btn").addEventListener("click", finishTimer);
 document.getElementById("time-up").addEventListener("click", () => adjustTime("up"));
 document.getElementById("time-down").addEventListener("click", () => adjustTime("down"));
-// Removed separate .add-task-button event listener, handled in renderTasks
 
 // Initial setup
 Promise.all([fetchTasks(), fetchCompletedTasks()]).then(([taskData, completedData]) => {
@@ -699,16 +717,143 @@ Promise.all([fetchTasks(), fetchCompletedTasks()]).then(([taskData, completedDat
         fetchTasks().then(data => {
             tasks = data.length ? data : tasks;
             renderTasks();
+            socket.emit('tasksUpdated', tasks); // Broadcast tasks update
         });
         fetchCompletedTasks().then(data => {
             completedTasks = data.length ? data : [];
             renderCalendar();
             updateProgressBox('timeGridDay');
+            socket.emit('completedTasksUpdated', completedTasks); // Broadcast completed tasks update
         });
     }, 5000);
 });
 
-// Socket.IO listeners
+// Socket.IO listeners for live syncing
+socket.on('timerUpdate', (data) => {
+    if (data.currentTask && (!currentTask || data.currentTask.task === currentTask.task && data.currentTask.subtask === currentTask.subtask)) {
+        timer = data.timer;
+        isPaused = data.isPaused;
+        currentTask = data.currentTask || currentTask; // Update currentTask if provided
+        document.getElementById("timer").textContent = formatTime(timer);
+        document.getElementById("pause-btn").textContent = isPaused ? "Resume" : "Pause";
+        document.getElementById("pause-btn").disabled = false;
+        document.getElementById("finish-btn").disabled = false;
+        document.getElementById("start-btn").disabled = true;
+        document.getElementById("task-text").innerHTML = `${currentTask.task}${currentTask.subtask ? " - " + currentTask.subtask : ""} (${currentTask.time / 60} hours)`;
+        document.getElementById("suggestion").style.setProperty('--task-color', currentTask.color);
+        if (interval) clearInterval(interval); // Clear existing interval to prevent conflicts
+        if (!isPaused) {
+            interval = setInterval(() => {
+                timer++;
+                document.getElementById("timer").textContent = formatTime(timer);
+                socket.emit('timerUpdate', { timer, isPaused, currentTask }); // Broadcast updated timer
+            }, 1000);
+        }
+    }
+});
+
+socket.on('timerStarted', (data) => {
+    if (data.currentTask && (!currentTask || data.currentTask.task === currentTask.task && data.currentTask.subtask === currentTask.subtask)) {
+        timer = data.timer;
+        isPaused = data.isPaused;
+        currentTask = data.currentTask || currentTask;
+        document.getElementById("timer").textContent = formatTime(timer);
+        document.getElementById("pause-btn").textContent = isPaused ? "Resume" : "Pause";
+        document.getElementById("pause-btn").disabled = false;
+        document.getElementById("finish-btn").disabled = false;
+        document.getElementById("start-btn").disabled = true;
+        document.getElementById("task-text").innerHTML = `${currentTask.task}${currentTask.subtask ? " - " + currentTask.subtask : ""} (${currentTask.time / 60} hours)`;
+        document.getElementById("suggestion").style.setProperty('--task-color', currentTask.color);
+        if (interval) clearInterval(interval);
+        if (!isPaused) {
+            interval = setInterval(() => {
+                timer++;
+                document.getElementById("timer").textContent = formatTime(timer);
+                socket.emit('timerUpdate', { timer, isPaused, currentTask }); // Broadcast updated timer
+            }, 1000);
+        }
+    }
+});
+
+socket.on('timerPaused', (data) => {
+    if (data.currentTask && (!currentTask || data.currentTask.task === currentTask.task && data.currentTask.subtask === currentTask.subtask)) {
+        isPaused = data.isPaused;
+        document.getElementById("pause-btn").textContent = isPaused ? "Resume" : "Pause";
+        if (interval) clearInterval(interval);
+        if (!isPaused) {
+            interval = setInterval(() => {
+                timer++;
+                document.getElementById("timer").textContent = formatTime(timer);
+                socket.emit('timerUpdate', { timer, isPaused, currentTask }); // Broadcast updated timer
+            }, 1000);
+        }
+    }
+});
+
+socket.on('timerFinished', (data) => {
+    if (data.currentTask && (!currentTask || data.currentTask.task === currentTask.task && data.currentTask.subtask === currentTask.subtask)) {
+        clearInterval(interval);
+        timer = data.timer;
+        isPaused = data.isPaused;
+        currentTask = data.currentTask || currentTask;
+        currentTask.end = new Date();
+        currentTask.duration = timer;
+        document.getElementById("timer").textContent = formatTime(timer);
+        document.getElementById("pause-btn").disabled = true;
+        document.getElementById("finish-btn").disabled = true;
+        document.getElementById("comment-section").style.display = "flex";
+        document.getElementById("task-text").innerHTML = `${currentTask.task}${currentTask.subtask ? " - " + currentTask.subtask : ""} (${currentTask.time / 60} hours)`;
+        document.getElementById("suggestion").style.setProperty('--task-color', currentTask.color);
+    }
+});
+
+socket.on('timerReset', (data) => {
+    timer = 0;
+    isPaused = false;
+    currentTask = null;
+    document.getElementById("timer").textContent = "00:00:00";
+    document.getElementById("pause-btn").disabled = true;
+    document.getElementById("finish-btn").disabled = true;
+    document.getElementById("task-text").innerHTML = "Select a Task to Begin";
+    document.getElementById("suggestion").style.setProperty('--task-color', '#888888');
+    document.getElementById("start-btn").disabled = true;
+    document.getElementById("time-up").disabled = true;
+    document.getElementById("time-down").disabled = true;
+    if (interval) clearInterval(interval);
+});
+
+socket.on('taskGenerated', (data) => {
+    currentTask = data;
+    document.getElementById("task-text").innerHTML = `${currentTask.task}${currentTask.subtask ? " - " + currentTask.subtask : ""} (${currentTask.time / 60} hours)`;
+    document.getElementById("suggestion").style.setProperty('--task-color', currentTask.color);
+    document.getElementById("start-btn").disabled = false;
+    document.getElementById("time-up").disabled = false;
+    document.getElementById("time-down").disabled = false;
+});
+
+socket.on('taskSelected', (data) => {
+    currentTask = data;
+    document.getElementById("task-text").innerHTML = `${currentTask.task}${currentTask.subtask ? " - " + currentTask.subtask : ""} (${currentTask.time / 60} hours)`;
+    document.getElementById("suggestion").style.setProperty('--task-color', currentTask.color);
+    document.getElementById("start-btn").disabled = false;
+    document.getElementById("time-up").disabled = false;
+    document.getElementById("time-down").disabled = false;
+});
+
+socket.on('taskAdjusted', (data) => {
+    currentTask = data;
+    document.getElementById("task-text").innerHTML = `${currentTask.task}${currentTask.subtask ? " - " + currentTask.subtask : ""} (${currentTask.time / 60} hours)`;
+});
+
+socket.on('taskCompleted', (data) => {
+    currentTask = null;
+    document.getElementById("task-text").innerHTML = "Select a Task to Begin";
+    document.getElementById("suggestion").style.setProperty('--task-color', '#888888');
+    document.getElementById("start-btn").disabled = true;
+    document.getElementById("time-up").disabled = true;
+    document.getElementById("time-down").disabled = true;
+});
+
 socket.on('tasksUpdated', (updatedTasks) => {
     tasks = updatedTasks;
     renderTasks();
@@ -716,22 +861,35 @@ socket.on('tasksUpdated', (updatedTasks) => {
 
 socket.on('completedTasksUpdated', (updatedCompletedTasks) => {
     completedTasks = updatedCompletedTasks;
-    renderCalendar();
+    if (calendar) {
+        const currentView = calendar.view.type;
+        const currentDate = calendar.view.activeStart;
+        calendar.destroy();
+        renderCalendar();
+        calendar.changeView(currentView, currentDate);
+    }
     updateProgressBox(calendar ? calendar.view.type : 'timeGridDay');
 });
 
-socket.on('timerUpdate', (data) => {
-    if (currentTask && data.currentTask.task === currentTask.task && data.currentTask.subtask === currentTask.subtask) {
-        timer = data.timer;
-        isPaused = data.isPaused;
-        document.getElementById("timer").textContent = formatTime(timer);
-        document.getElementById("pause-btn").textContent = isPaused ? "Resume" : "Pause";
-        document.getElementById("pause-btn").disabled = false;
-        document.getElementById("finish-btn").disabled = false;
-        document.getElementById("start-btn").disabled = true;
+socket.on('stateLoaded', (data) => {
+    timer = data.timer;
+    isPaused = data.isPaused;
+    currentTask = data.currentTask;
+    document.getElementById("timer").textContent = formatTime(timer);
+    document.getElementById("pause-btn").textContent = isPaused ? "Resume" : "Pause";
+    document.getElementById("task-text").innerHTML = currentTask ? `${currentTask.task}${currentTask.subtask ? " - " + currentTask.subtask : ""} (${currentTask.time / 60} hours)` : "Select a Task to Begin";
+    document.getElementById("suggestion").style.setProperty('--task-color', currentTask ? currentTask.color : '#888888');
+    document.getElementById("start-btn").disabled = !currentTask || isPaused;
+    document.getElementById("pause-btn").disabled = !currentTask;
+    document.getElementById("finish-btn").disabled = !currentTask || isPaused;
+    document.getElementById("time-up").disabled = !currentTask;
+    document.getElementById("time-down").disabled = !currentTask;
+    if (interval) clearInterval(interval);
+    if (currentTask && !isPaused) {
+        interval = setInterval(() => {
+            timer++;
+            document.getElementById("timer").textContent = formatTime(timer);
+            socket.emit('timerUpdate', { timer, isPaused, currentTask }); // Broadcast updated timer
+        }, 1000);
     }
 });
-
-setInterval(() => {
-    if (new Date().getDay() === 1 && new Date().getHours() === 8) generateWeeklyReport();
-}, 3600000);
