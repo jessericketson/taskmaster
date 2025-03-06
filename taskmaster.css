@@ -389,6 +389,7 @@ textarea {
     position: absolute;
     top: 0;
     left: 0;
+    background: var(--task-color, #888888); /* Ensure vibrant task colors */
 }
 
 .progress-box .progress-bar .suggested {
@@ -396,6 +397,7 @@ textarea {
     position: absolute;
     top: 0;
     left: 0;
+    background: var(--task-color, #888888); /* Ensure vibrant task colors */
     opacity: 0.5;
 }
 
@@ -554,7 +556,7 @@ button.add-subtask:hover {
     transform: translateY(-2px);
 }
 
-/* Popup Styling */
+/* Popup Styling (Shared for Both Layouts) */
 .popup {
     position: fixed;
     top: 0;
@@ -609,163 +611,4 @@ button.add-subtask:hover {
 
 .popup-content button:hover {
     background: #00b8e6;
-}
-
-/* Mobile Formatting Improvements (Updated for Timer at Top) */
-@media (max-width: 768px) {
-    .container {
-        flex-direction: column;
-        margin: 0;
-        height: auto;
-    }
-
-    .sidebar {
-        width: 100%;
-        margin-bottom: 10px;
-        padding: 10px;
-        height: auto;
-        max-height: calc(100vh - 20px); /* Adjust for mobile */
-    }
-
-    .main-content {
-        flex-direction: column;
-        width: 100%;
-        padding: 10px;
-    }
-
-    .middle-column, .right-column {
-        width: 100%;
-    }
-
-    .header {
-        display: none; /* Hide the header on mobile, as timer is now at the top */
-    }
-
-    /* Move timer to the top, centered, full-width */
-    .timer {
-        order: 1; /* Place timer at the top of .middle-column */
-        font-size: 2em; /* Reduced for mobile, but still prominent */
-        color: #26a69a;
-        font-weight: 700;
-        letter-spacing: 1px;
-        width: 100%; /* Full width */
-        text-align: center; /* Centered horizontally */
-        margin: 10px 0; /* Spacing above and below */
-        padding: 10px; /* Add padding for touch targets */
-        height: auto; /* Allow natural height */
-        line-height: normal; /* Reset line-height for centering */
-        background: #252525; /* Match header background for consistency */
-        border-radius: 12px; /* Match other elements */
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add shadow for depth */
-    }
-
-    .middle-column {
-        display: flex;
-        flex-direction: column;
-        gap: 10px; /* Reduced gap for mobile */
-    }
-
-    .middle-column > .suggestion {
-        order: 2; /* Suggestion box below timer */
-    }
-
-    .middle-column > #task-btn {
-        order: 3; /* Generate Task button beneath suggestion */
-        width: 100%;
-        margin: 0; /* Reset margins for mobile */
-    }
-
-    .middle-column > .controls {
-        order: 4; /* Start, Pause, Finish buttons below Generate Task */
-        justify-content: center;
-        flex-direction: column;
-        gap: 10px;
-        margin: 0; /* Remove default margins */
-        padding: 10px; /* Add padding for touch targets */
-        background: #252525; /* Match header background */
-        border-radius: 12px; /* Match other elements */
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add shadow for depth */
-    }
-
-    .middle-column > .calendar {
-        order: 5; /* Calendar below controls */
-        height: 300px; /* Reduced height for mobile, more compact */
-        min-height: unset;
-        padding: 10px; /* Reduced padding */
-    }
-
-    .middle-column > #task-list {
-        order: 6; /* Task list at the bottom */
-        max-height: calc(50vh - 20px); /* Limit height for scrolling */
-        overflow-y: auto;
-    }
-
-    .right-column .task-details,
-    .right-column .progress-box {
-        height: auto;
-        margin-top: 10px;
-        padding: 10px; /* Reduced padding */
-    }
-
-    button, input, textarea {
-        width: 100%;
-        max-width: 300px;
-        padding: 8px; /* Reduced padding for mobile */
-        margin: 5px 0;
-    }
-
-    li, .subtasks li {
-        flex-direction: column; /* Stack on mobile */
-        align-items: flex-start;
-        padding: 8px; /* Reduced padding */
-    }
-
-    li .buttons, .subtasks li .buttons {
-        margin-left: 0;
-        margin-top: 5px; /* Space after name */
-    }
-
-    .add-task-button, button.add-subtask {
-        margin-left: 0;
-        margin-top: 5px; /* Stack below tasks/subtasks on mobile */
-    }
-
-    .subtasks {
-        margin-top: 5px;
-    }
-
-    .subtasks li {
-        padding: 6px; /* Reduced padding */
-    }
-
-    .popup-content {
-        width: 90%; /* Fuller width on mobile */
-        padding: 15px; /* Reduced padding */
-    }
-}
-
-/* Desktop Layout (No Changes) */
-@media (min-width: 769px) {
-    .timer {
-        font-size: 3.8em; /* Maintain desktop size */
-        height: 48px;
-        line-height: 48px;
-    }
-
-    .header {
-        display: flex; /* Ensure header is visible on desktop */
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-        padding: 20px;
-        height: 48px;
-    }
-
-    .middle-column > .suggestion,
-    .middle-column > .header,
-    .middle-column > .calendar,
-    .middle-column > #task-list,
-    .middle-column > #task-btn {
-        order: unset; /* Reset order for desktop */
-    }
 }
