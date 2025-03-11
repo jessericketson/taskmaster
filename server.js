@@ -1,6 +1,6 @@
 const express = require('express');
 const path = require('path');
-const { MongoClient } = require('mongodb');
+const { MongoClient, ObjectId } = require('mongodb'); // Import ObjectId
 const { Server } = require('socket.io');
 const http = require('http');
 const app = express();
@@ -81,14 +81,42 @@ app.post('/api/completed-tasks', async (req, res) => {
         if (!db) return res.status(503).json({ error: 'Database not connected' });
         const completedTask = req.body;
         console.log('POST /api/completed-tasks received:', completedTask);
-        await db.collection('completed_tasks').insertOne(completedTask);
-        console.log('Completed task saved to DB');
+        const result = await db.collection('completed_tasks').insertOne(completedTask);
+        console.log('Completed task saved to DB with _id:', result.insertedId);
+        const updatedCompletedTasks = await db.collection('completed_tasks').find().toArray();
+        io.emit('completedTasksUpdated', updatedCompletedTasks);
+        res.json({ success: true, insertedId: result.insertedId });
+    } catch (err) {
+        console.error('POST /api/completed-tasks error:', err);
+        res.status(500).json({ error: 'Failed to save completed task' });
+    }
+});
+
+app.delete('/api/completed-tasks/:id', async (req, res) => {
+    try {
+        if (!db) return res.status(503).json({ error: 'Database not connected' });
+        const taskId = req.params.id;
+        console.log(`DELETE /api/completed-tasks/${taskId} received`);
+        // Convert the string ID to an ObjectId
+        let objectId;
+        try {
+            objectId = new ObjectId(taskId);
+        } catch (err) {
+            console.warn(`Invalid ObjectId format for ID ${taskId}`);
+            return res.status(400).json({ error: 'Invalid task ID format' });
+        }
+        const result = await db.collection('completed_tasks').deleteOne({ _id: objectId });
+        if (result.deletedCount === 0) {
+            console.warn(`No task found with ID ${taskId} to delete`);
+            return res.status(404).json({ error: 'Task not found' });
+        }
+        console.log(`Task with ID ${taskId} deleted from DB`);
         const updatedCompletedTasks = await db.collection('completed_tasks').find().toArray();
         io.emit('completedTasksUpdated', updatedCompletedTasks);
         res.json({ success: true });
     } catch (err) {
-        console.error('POST /api/completed-tasks error:', err);
-        res.status(500).json({ error: 'Failed to save completed task' });
+        console.error(`DELETE /api/completed-tasks/${req.params.id} error:`, err);
+        res.status(500).json({ error: 'Failed to delete completed task' });
     }
 });
 
