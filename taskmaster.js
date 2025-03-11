@@ -48,7 +48,7 @@ async function fetchCompletedTasks() {
             throw new Error('Failed to fetch completed tasks');
         }
         const data = await response.json();
-        console.log('Fetched completed tasks:', data);
+        console.log('Fetched completed tasks with IDs:', data); // Debug log
         return data;
     } catch (err) {
         console.error('Error fetching completed tasks:', err);
@@ -80,6 +80,8 @@ async function saveCompletedTask(task) {
             body: JSON.stringify(task),
         });
         if (!response.ok) throw new Error('Failed to save completed task');
+        const data = await response.json();
+        console.log('Saved completed task response:', data); // Debug log
         console.log('Completed task saved:', task);
         return true;
     } catch (err) {
@@ -356,18 +358,42 @@ function renderCalendar() {
     }
 }
 
-function deleteCalendarTask(index) {
-    const scrollTop = document.getElementById("calendar").scrollTop;
-    const currentView = calendar.view.type;
-    const currentDate = calendar.view.activeStart;
-    completedTasks.splice(index, 1);
-    calendar.destroy();
-    renderCalendar();
-    calendar.changeView(currentView, currentDate);
-    document.getElementById("calendar").scrollTop = scrollTop;
-    updateTaskDetails();
-    updateProgressBox(currentView);
-    socket.emit('completedTasksUpdated', completedTasks); // Broadcast completed tasks update
+async function deleteCalendarTask(index) {
+    const taskToDelete = completedTasks[index];
+    console.log('Attempting to delete task:', taskToDelete); // Debug log
+    if (!taskToDelete || !taskToDelete._id) {
+        console.error('Cannot delete task: Invalid index or missing _id', { index, task: taskToDelete });
+        return;
+    }
+
+    try {
+        // Send DELETE request to the server with encoded ID
+        const response = await fetch(`/api/completed-tasks/${encodeURIComponent(taskToDelete._id)}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`Failed to delete task from database: ${errorData.error}`);
+        }
+
+        // On successful deletion, update local state
+        const scrollTop = document.getElementById("calendar").scrollTop;
+        const currentView = calendar.view.type;
+        const currentDate = calendar.view.activeStart;
+        completedTasks.splice(index, 1);
+        calendar.destroy();
+        renderCalendar();
+        calendar.changeView(currentView, currentDate);
+        document.getElementById("calendar").scrollTop = scrollTop;
+        updateTaskDetails();
+        updateProgressBox(currentView);
+        socket.emit('completedTasksUpdated', completedTasks); // Broadcast completed tasks update
+    } catch (err) {
+        console.error('Error deleting task:', err);
+        alert('Failed to delete task. Please try again.'); // Notify user
+    }
 }
 
 function updateTaskDetails() {
