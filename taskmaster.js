@@ -341,8 +341,8 @@ function renderCalendar() {
                             overflow: hidden;
                             white-space: nowrap;
                             text-overflow: ellipsis;
-                            width: 100%;
-                            height: 100%;
+                           
+                    
                             display: flex;
                             align-items: center;
                             justify-content: flex-start;

@@ -278,9 +278,11 @@ textarea {
     padding: 0 !important;
     margin: 0 !important;
     box-shadow: none !important;
-    position: relative !important;
+    /* Remove or comment out the following line */
+    /* position: relative !important; */
     cursor: pointer !important;
 }
+
 
 .fc .fc-daygrid-event .fc-event-main,
 .fc .fc-timegrid-event .fc-event-main {
