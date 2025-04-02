@@ -969,3 +969,201 @@ socket.on('stateLoaded', (data) => {
         }, 1000);
     }
 });
+
+
+// --- Responsive Swipe Logic ---
+
+function initializeMobileSwipe() {
+    // Only add listeners if potentially on a touch device (basic check)
+    if (!('ontouchstart' in window)) {
+       console.log("Touch events not detected, skipping swipe initialization.");
+       return;
+    }
+    console.log("Initializing mobile swipe detection.");
+
+   // Select the element where swipes should be detected (usually the main content area)
+   const mainContentArea = document.querySelector('.main-content');
+   const body = document.body; // We'll add classes to the body
+
+   if (!mainContentArea) {
+       console.error("Swipe initialization failed: .main-content area not found.");
+       return;
+   }
+
+   let touchStartX = 0;
+   let touchEndX = 0;
+   let touchStartY = 0;
+   let touchEndY = 0;
+   let isSwiping = false; // Flag to ensure touchmove/touchend correlate to a valid touchstart
+
+   // --- Main Gesture Handler (SWAPPED DIRECTIONS) ---
+   function handleGesture() {
+    const deltaX = touchEndX - touchStartX;
+    const deltaY = touchEndY - touchStartY;
+    const swipeThreshold = 50; // Minimum horizontal distance for a swipe
+    const tapThreshold = 20; // Maximum movement for a tap
+
+    // Check 1: Is the movement predominantly horizontal and meets the threshold?
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > swipeThreshold) {
+        if (deltaX < -swipeThreshold) {
+            // *** SWIPE LEFT: Show CALENDAR, Hide Sidebar ***
+            console.log("Swipe Left Detected (Show Calendar)");
+            if (body.classList.contains('show-sidebar')) {
+                body.classList.remove('show-sidebar');
+            } else if (!body.classList.contains('show-calendar')) {
+                body.classList.add('show-calendar');
+                // IMPORTANT: Trigger calendar resize after the panel is likely visible
+                if (typeof calendar !== 'undefined' && calendar && typeof calendar.updateSize === 'function') {
+                    // Delay matches the CSS transition duration
+                    setTimeout(() => {
+                        console.log("Updating calendar size after swipe left.");
+                        calendar.updateSize();
+                    }, 350);
+                }
+            }
+        } else if (deltaX > swipeThreshold) {
+            // *** SWIPE RIGHT: Show SIDEBAR, Hide Calendar ***
+            console.log("Swipe Right Detected (Show Sidebar)");
+            if (body.classList.contains('show-calendar')) {
+                body.classList.remove('show-calendar');
+            } else if (!body.classList.contains('show-sidebar')) {
+                body.classList.add('show-sidebar');
+            }
+        }
+    }
+    // Check 2: Was it a minimal movement (tap)? Close open panels if tapped outside.
+    else if (Math.abs(deltaX) < tapThreshold && Math.abs(deltaY) < tapThreshold) {
+         // (This part remains the same - closes any open panel on tap outside)
+         if (body.classList.contains('show-sidebar') || body.classList.contains('show-calendar')) {
+              const sidebar = document.querySelector('.sidebar');
+              const calendarEl = document.getElementById('calendar');
+              let target = event.target;
+              let tappedOutsidePanel = true;
+
+              if (body.classList.contains('show-sidebar') && sidebar && sidebar.contains(target)) {
+                    tappedOutsidePanel = false;
+              }
+              if (body.classList.contains('show-calendar') && calendarEl && calendarEl.contains(target)) {
+                    tappedOutsidePanel = false;
+              }
+
+              if (tappedOutsidePanel) {
+                 console.log("Tap outside open panel detected, closing panels.");
+                 body.classList.remove('show-sidebar');
+                 body.classList.remove('show-calendar');
+              }
+         }
+    }
+} // --- End of modified handleGesture ---
+
+   // --- Event Listeners ---
+
+   mainContentArea.addEventListener('touchstart', (e) => {
+       const sidebar = document.querySelector('.sidebar');
+       const calendarEl = document.getElementById('calendar');
+
+       // IMPORTANT: Prevent swipe initiation if the touch starts *inside* an already open panel.
+       // This allows scrolling within the panel itself.
+       if ((body.classList.contains('show-sidebar') && sidebar && sidebar.contains(e.target)) ||
+           (body.classList.contains('show-calendar') && calendarEl && calendarEl.contains(e.target))) {
+           isSwiping = false; // Do not start a swipe gesture
+           // console.log("Touch started inside an open panel, swipe ignored.");
+           return;
+       }
+
+       // Record starting coordinates if touch is in the main area
+       touchStartX = e.changedTouches[0].screenX;
+       touchStartY = e.changedTouches[0].screenY;
+       isSwiping = true; // Okay to start tracking swipe gesture
+       // console.log("Touch Start:", touchStartX, touchStartY);
+   }, { passive: true }); // Use passive: true for better scroll performance
+
+   mainContentArea.addEventListener('touchmove', (e) => {
+       // Only track movement if a valid swipe gesture was started
+       if (!isSwiping) return;
+
+       // Record current coordinates
+       touchEndX = e.changedTouches[0].screenX;
+       touchEndY = e.changedTouches[0].screenY;
+       // console.log("Touch Move:", touchEndX, touchEndY);
+   }, { passive: true });
+
+   mainContentArea.addEventListener('touchend', (e) => {
+       // Only process touchend if a valid swipe gesture was started
+       if (!isSwiping) return;
+
+       // Record final coordinates (touchEndX/Y might not be updated if touchmove didn't fire)
+       touchEndX = e.changedTouches[0].screenX;
+       touchEndY = e.changedTouches[0].screenY;
+       // console.log("Touch End:", touchEndX, touchEndY);
+
+       // Determine the gesture
+       handleGesture();
+
+       // Reset state for the next touch
+       isSwiping = false;
+       touchStartX = 0;
+       touchEndX = 0;
+       touchStartY = 0;
+       touchEndY = 0;
+   });
+
+    // Optional: Add listener to close panels if window resizes from mobile to desktop view
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) { // Use the same breakpoint as your CSS media query
+            if(body.classList.contains('show-sidebar') || body.classList.contains('show-calendar')) {
+                console.log("Resized to desktop width, closing mobile panels.");
+                body.classList.remove('show-sidebar');
+                body.classList.remove('show-calendar');
+            }
+        }
+    });
+
+     // --- Optional: Enhance Calendar Interaction on Mobile ---
+     // If your calendar instance is globally accessible (e.g., as 'calendar'),
+     // you can modify its eventClick handler
+     if (typeof calendar !== 'undefined' && calendar) {
+         // This assumes you re-initialize or update calendar options somewhere in your code.
+         // You might need to integrate this into your existing calendar setup logic.
+         // Example:
+         /*
+         calendar.setOption('eventClick', function(info) {
+             console.log('Event Clicked (Mobile Enhanced):', info.event);
+             // Call your existing function to display details
+             displayTaskDetails(info.event.extendedProps.taskId);
+
+             // On mobile screens, automatically close the calendar panel after clicking an event
+             if (window.innerWidth <= 768 && document.body.classList.contains('show-calendar')) {
+                console.log("Closing calendar panel after event click on mobile.");
+                document.body.classList.remove('show-calendar');
+             }
+         });
+         */
+         // Note: Directly modifying options like this might vary depending on how you initialize FullCalendar.
+         // It might be better to include this logic within the options object during initialization.
+     }
+
+} // --- End of initializeMobileSwipe ---
+
+
+// --- Initialization ---
+// Make sure this initialization runs after the DOM is loaded
+// and after your FullCalendar instance (the global 'calendar' variable) is created.
+document.addEventListener('DOMContentLoaded', () => {
+   // --- Keep all your existing DOMContentLoaded code here ---
+
+   // Call the swipe initializer
+   // It might need to be called slightly later if 'calendar' isn't ready yet.
+   // A small timeout can sometimes help, or place it after calendar.render().
+   setTimeout(initializeMobileSwipe, 100); // Small delay to ensure other elements are ready
+});
+
+// --- Make sure you have your FullCalendar instance available globally ---
+// Example: Declare it outside functions if needed by the swipe logic
+// let calendar;
+// function renderCalendar() {
+//    const calendarEl = document.getElementById('calendar');
+//    // ... other setup ...
+//    calendar = new FullCalendar.Calendar(calendarEl, { /* options */ }); // Assign to global var
+//    calendar.render();
+// }
