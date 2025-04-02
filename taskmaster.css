@@ -271,7 +271,7 @@ textarea {
     height: 6em;
 }
 
-.fc .fc-daygrid-event,
+/*.fc .fc-daygrid-event,
 .fc .fc-timegrid-event {
     background: transparent !important;
     border: none !important;
@@ -279,8 +279,13 @@ textarea {
     margin: 0 !important;
     box-shadow: none !important;
     /* Remove or comment out the following line */
-    /* position: relative !important; */
+    /* position: relative !important;
     cursor: pointer !important;
+}*/
+
+.fc .fc-timegrid-event {
+    overflow: visible !important; /* Ensure content isn’t clipped */
+    min-height: 0 !important; /* Allow FullCalendar to set the height naturally */
 }
 
 

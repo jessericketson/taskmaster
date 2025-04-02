@@ -23,6 +23,14 @@ let completedTasks = [];
 let lastClickedTask = null;
 const today = new Date();
 
+// Format time in seconds to HH:MM:SS
+function formatTime(seconds) {
+    const hours = Math.floor(seconds / 3600).toString().padStart(2, "0");
+    const minutes = Math.floor((seconds % 3600) / 60).toString().padStart(2, "0");
+    const secs = (seconds % 60).toString().padStart(2, "0");
+    return `${hours}:${minutes}:${secs}`;
+}
+
 // API Functions
 async function fetchTasks() {
     try {
@@ -159,68 +167,73 @@ function adjustTime(direction) {
     socket.emit('taskAdjusted', currentTask); // Broadcast time adjustment to all devices
 }
 
+// State
+let startTimestamp = null;
+let pauseTimestamp = null;
+let totalPausedTime = 0;
+
 // Timer functionality
 function startTimer() {
     if (!currentTask) return;
     currentTask.start = new Date();
+    startTimestamp = Date.now();
+    totalPausedTime = 0;
     interval = setInterval(() => {
         if (!isPaused) {
-            timer++;
+            timer = calculateElapsedTime();
             document.getElementById("timer").textContent = formatTime(timer);
-            socket.emit('timerUpdate', { timer, isPaused, currentTask }); // Broadcast timer update to all devices
+            socket.emit('timerUpdate', { timer, isPaused, currentTask, startTimestamp, totalPausedTime });
         }
     }, 1000);
     document.getElementById("pause-btn").disabled = false;
     document.getElementById("finish-btn").disabled = false;
     document.getElementById("start-btn").disabled = true;
-    socket.emit('timerStarted', { timer, isPaused, currentTask }); // Broadcast timer start
+    socket.emit('timerStarted', { timer, isPaused, currentTask, startTimestamp, totalPausedTime });
+}
+
+function calculateElapsedTime() {
+    if (!startTimestamp) return 0;
+    const now = Date.now();
+    const elapsed = Math.floor((now - startTimestamp - totalPausedTime) / 1000);
+    return Math.max(0, elapsed);
 }
 
 function pauseTimer() {
+    if (!currentTask) return;
     isPaused = !isPaused;
+    if (isPaused) {
+        pauseTimestamp = Date.now();
+    } else {
+        totalPausedTime += Date.now() - pauseTimestamp;
+        pauseTimestamp = null;
+    }
     document.getElementById("pause-btn").textContent = isPaused ? "Resume" : "Pause";
-    socket.emit('timerUpdate', { timer, isPaused, currentTask }); // Broadcast pause/resume to all devices
-    socket.emit('timerPaused', { timer, isPaused, currentTask }); // Additional event for pause state
+    socket.emit('timerUpdate', { timer, isPaused, currentTask, startTimestamp, totalPausedTime });
+    socket.emit('timerPaused', { timer, isPaused, currentTask, startTimestamp, totalPausedTime });
 }
 
 function finishTimer() {
     if (!currentTask) return;
     clearInterval(interval);
-    currentTask.end = new Date();
+    timer = calculateElapsedTime();
+    currentTask.end = new Date(new Date(currentTask.start).getTime() + timer * 1000);
     currentTask.duration = timer;
     document.getElementById("comment-section").style.display = "flex";
     document.getElementById("finish-btn").disabled = true;
-    socket.emit('timerFinished', { timer, isPaused, currentTask }); // Broadcast timer finish
-}
-
-async function saveComment() {
-    if (!currentTask) return;
-    currentTask.comment = document.getElementById("task-comment").value;
-    await saveCompletedTask(currentTask); // Save to DB first
-    tasks.find(t => t.name === currentTask.task).prob = Math.max(0.1, tasks.find(t => t.name === currentTask.task).prob * 0.8);
-    await saveTasks(tasks); // Then save tasks with updated prob
-    const updatedCompletedTasks = await fetchCompletedTasks(); // Fetch latest completed tasks
-    completedTasks = updatedCompletedTasks.length ? updatedCompletedTasks : completedTasks;
-    resetTimer();
-    document.getElementById("comment-section").style.display = "none";
-    document.getElementById("task-comment").value = "";
-    if (calendar) {
-        const currentView = calendar.view.type;
-        const currentDate = calendar.view.activeStart;
-        calendar.destroy();
-        renderCalendar();
-        calendar.changeView(currentView, currentDate);
-    }
-    updateTaskDetails();
-    updateProgressBox(calendar ? calendar.view.type : 'timeGridDay');
-    socket.emit('taskCompleted', currentTask); // Broadcast completed task
-    socket.emit('completedTasksUpdated', completedTasks); // Broadcast completed tasks update
+    socket.emit('timerFinished', { timer, isPaused, currentTask, startTimestamp, totalPausedTime });
+    startTimestamp = null;
+    totalPausedTime = 0;
+    pauseTimestamp = null;
 }
 
 function resetTimer() {
     timer = 0;
     isPaused = false;
-    document.getElementById("timer").textContent = "00:00:00";
+    startTimestamp = null;
+    totalPausedTime = 0;
+    pauseTimestamp = null;
+    clearInterval(interval);
+    document.getElementById("timer").textContent = formatTime(0); // Use formatTime for consistency
     document.getElementById("pause-btn").disabled = true;
     document.getElementById("finish-btn").disabled = true;
     document.getElementById("task-text").innerHTML = "Select a Task to Begin";
@@ -229,14 +242,56 @@ function resetTimer() {
     document.getElementById("time-up").disabled = true;
     document.getElementById("time-down").disabled = true;
     currentTask = null;
-    socket.emit('timerReset', { timer, isPaused, currentTask }); // Broadcast timer reset
+    socket.emit('timerReset', { timer, isPaused, currentTask, startTimestamp, totalPausedTime });
 }
 
-function formatTime(seconds) {
-    const h = Math.floor(seconds / 3600).toString().padStart(2, "0");
-    const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, "0");
-    const s = (seconds % 60).toString().padStart(2, "0");
-    return `${h}:${m}:${s}`;
+async function saveComment() {
+    if (!currentTask) {
+        console.error("No current task to save comment for");
+        return;
+    }
+
+    // Get the comment from the textarea
+    const commentInput = document.getElementById("task-comment");
+    const comment = commentInput.value.trim();
+
+    // Add the comment to the current task
+    currentTask.comment = comment;
+
+    // Add the task to completedTasks
+    try {
+        // Save to the database
+        const success = await saveCompletedTask(currentTask);
+        if (!success) {
+            throw new Error("Failed to save completed task to database");
+        }
+
+        // On successful save, add to local completedTasks array
+        completedTasks.push(currentTask);
+
+        // Update the calendar
+        const scrollTop = document.getElementById("calendar").scrollTop;
+        const currentView = calendar.view.type;
+        const currentDate = calendar.view.activeStart;
+        calendar.destroy();
+        renderCalendar();
+        calendar.changeView(currentView, currentDate);
+        document.getElementById("calendar").scrollTop = scrollTop;
+
+        // Update the progress box
+        updateProgressBox(currentView);
+
+        // Reset the UI
+        document.getElementById("comment-section").style.display = "none";
+        commentInput.value = ""; // Clear the textarea
+        resetTimer();
+
+        // Broadcast the updated completed tasks to other clients
+        socket.emit('completedTasksUpdated', completedTasks);
+    } catch (err) {
+        console.error("Error saving completed task:", err);
+        alert("Failed to save task. Please try again.");
+    }
 }
 
 // Edit task name
@@ -302,14 +357,18 @@ function renderCalendar() {
                 center: "title",
                 right: "dayGridMonth,timeGridWeek,timeGridDay"
             },
-            slotDuration: '00:30:00',
+            slotDuration: '00:30:00', // 30-minute slots
+            slotMinTime: '00:00:00',
+            slotMaxTime: '24:00:00',
+            allDaySlot: false, // Disable all-day slot for cleaner display
             events: completedTasks.map((t, index) => {
                 const taskInfo = tasks.find(task => task.name === t.task);
                 const bgColor = taskInfo ? taskInfo.color : "#888888";
+                console.log(`Mapping event: ${t.task}, Start: ${t.start}, End: ${t.end}, Duration: ${t.duration}s`);
                 return {
                     title: `${t.task}${t.subtask ? " - " + t.subtask : ""}`,
-                    start: t.start,
-                    end: t.end,
+                    start: new Date(t.start),
+                    end: new Date(t.end),
                     backgroundColor: bgColor,
                     borderColor: bgColor,
                     textColor: "#e0e0e0",
@@ -341,14 +400,32 @@ function renderCalendar() {
                             overflow: hidden;
                             white-space: nowrap;
                             text-overflow: ellipsis;
-                           
-                    
                             display: flex;
                             align-items: center;
                             justify-content: flex-start;
+                            width: 100%;
+                            height: 100%; /* Allow the div to fill the event container */
                         ">${arg.event.title}</div>
                     `
                 };
+            },
+            eventDidMount: function(info) {
+                const durationSeconds = info.event.extendedProps.duration || 0;
+                const slotHeight = 96; // 6em * 16px (since .fc-timegrid-slot height is 6em, assuming 1em = 16px)
+                const minDurationMs = 30 * 60 * 1000; // 30 minutes in milliseconds
+                const actualEnd = new Date(new Date(info.event.start).getTime() + durationSeconds * 1000);
+                const minEnd = new Date(new Date(info.event.start).getTime() + minDurationMs);
+                const eventEnd = durationSeconds < 30 * 60 ? minEnd : actualEnd;
+
+                console.log(`Event ${info.event.title}: Duration ${durationSeconds}s, Start: ${info.event.start}, End: ${eventEnd}`);
+
+                // For events shorter than 30 minutes, set a minimum height
+                if (durationSeconds < 30 * 60) {
+                    info.el.style.minHeight = `${slotHeight}px`;
+                }
+                // For all events, ensure styles are applied
+                info.el.style.backgroundColor = "transparent"; // Let the custom div handle the background
+                info.el.style.border = "none"; // Remove default border
             },
             viewClassNames: function(arg) {
                 updateProgressBox(arg.view.type);
@@ -759,7 +836,10 @@ socket.on('timerUpdate', (data) => {
     if (data.currentTask && (!currentTask || data.currentTask.task === currentTask.task && data.currentTask.subtask === currentTask.subtask)) {
         timer = data.timer;
         isPaused = data.isPaused;
-        currentTask = data.currentTask || currentTask; // Update currentTask if provided
+        currentTask = data.currentTask || currentTask;
+        startTimestamp = data.startTimestamp || startTimestamp;
+        totalPausedTime = data.totalPausedTime || totalPausedTime;
+
         document.getElementById("timer").textContent = formatTime(timer);
         document.getElementById("pause-btn").textContent = isPaused ? "Resume" : "Pause";
         document.getElementById("pause-btn").disabled = false;
@@ -767,12 +847,13 @@ socket.on('timerUpdate', (data) => {
         document.getElementById("start-btn").disabled = true;
         document.getElementById("task-text").innerHTML = `${currentTask.task}${currentTask.subtask ? " - " + currentTask.subtask : ""} (${currentTask.time / 60} hours)`;
         document.getElementById("suggestion").style.setProperty('--task-color', currentTask.color);
-        if (interval) clearInterval(interval); // Clear existing interval to prevent conflicts
-        if (!isPaused) {
+
+        if (interval) clearInterval(interval);
+        if (!isPaused && startTimestamp) {
             interval = setInterval(() => {
-                timer++;
+                timer = calculateElapsedTime();
                 document.getElementById("timer").textContent = formatTime(timer);
-                socket.emit('timerUpdate', { timer, isPaused, currentTask }); // Broadcast updated timer
+                socket.emit('timerUpdate', { timer, isPaused, currentTask, startTimestamp, totalPausedTime });
             }, 1000);
         }
     }
@@ -783,6 +864,9 @@ socket.on('timerStarted', (data) => {
         timer = data.timer;
         isPaused = data.isPaused;
         currentTask = data.currentTask || currentTask;
+        startTimestamp = data.startTimestamp || startTimestamp;
+        totalPausedTime = data.totalPausedTime || totalPausedTime;
+
         document.getElementById("timer").textContent = formatTime(timer);
         document.getElementById("pause-btn").textContent = isPaused ? "Resume" : "Pause";
         document.getElementById("pause-btn").disabled = false;
@@ -790,12 +874,13 @@ socket.on('timerStarted', (data) => {
         document.getElementById("start-btn").disabled = true;
         document.getElementById("task-text").innerHTML = `${currentTask.task}${currentTask.subtask ? " - " + currentTask.subtask : ""} (${currentTask.time / 60} hours)`;
         document.getElementById("suggestion").style.setProperty('--task-color', currentTask.color);
+
         if (interval) clearInterval(interval);
-        if (!isPaused) {
+        if (!isPaused && startTimestamp) {
             interval = setInterval(() => {
-                timer++;
+                timer = calculateElapsedTime();
                 document.getElementById("timer").textContent = formatTime(timer);
-                socket.emit('timerUpdate', { timer, isPaused, currentTask }); // Broadcast updated timer
+                socket.emit('timerUpdate', { timer, isPaused, currentTask, startTimestamp, totalPausedTime });
             }, 1000);
         }
     }
@@ -804,13 +889,17 @@ socket.on('timerStarted', (data) => {
 socket.on('timerPaused', (data) => {
     if (data.currentTask && (!currentTask || data.currentTask.task === currentTask.task && data.currentTask.subtask === currentTask.subtask)) {
         isPaused = data.isPaused;
+        timer = data.timer;
+        startTimestamp = data.startTimestamp || startTimestamp;
+        totalPausedTime = data.totalPausedTime || totalPausedTime;
+
         document.getElementById("pause-btn").textContent = isPaused ? "Resume" : "Pause";
         if (interval) clearInterval(interval);
-        if (!isPaused) {
+        if (!isPaused && startTimestamp) {
             interval = setInterval(() => {
-                timer++;
+                timer = calculateElapsedTime();
                 document.getElementById("timer").textContent = formatTime(timer);
-                socket.emit('timerUpdate', { timer, isPaused, currentTask }); // Broadcast updated timer
+                socket.emit('timerUpdate', { timer, isPaused, currentTask, startTimestamp, totalPausedTime });
             }, 1000);
         }
     }
@@ -822,7 +911,10 @@ socket.on('timerFinished', (data) => {
         timer = data.timer;
         isPaused = data.isPaused;
         currentTask = data.currentTask || currentTask;
-        currentTask.end = new Date();
+        startTimestamp = data.startTimestamp || startTimestamp;
+        totalPausedTime = data.totalPausedTime || totalPausedTime;
+
+        currentTask.end = new Date(new Date(currentTask.start).getTime() + timer * 1000);
         currentTask.duration = timer;
         document.getElementById("timer").textContent = formatTime(timer);
         document.getElementById("pause-btn").disabled = true;
@@ -837,6 +929,9 @@ socket.on('timerReset', (data) => {
     timer = 0;
     isPaused = false;
     currentTask = null;
+    startTimestamp = null;
+    totalPausedTime = 0;
+    pauseTimestamp = null;
     document.getElementById("timer").textContent = "00:00:00";
     document.getElementById("pause-btn").disabled = true;
     document.getElementById("finish-btn").disabled = true;
@@ -848,59 +943,13 @@ socket.on('timerReset', (data) => {
     if (interval) clearInterval(interval);
 });
 
-socket.on('taskGenerated', (data) => {
-    currentTask = data;
-    document.getElementById("task-text").innerHTML = `${currentTask.task}${currentTask.subtask ? " - " + currentTask.subtask : ""} (${currentTask.time / 60} hours)`;
-    document.getElementById("suggestion").style.setProperty('--task-color', currentTask.color);
-    document.getElementById("start-btn").disabled = false;
-    document.getElementById("time-up").disabled = false;
-    document.getElementById("time-down").disabled = false;
-});
-
-socket.on('taskSelected', (data) => {
-    currentTask = data;
-    document.getElementById("task-text").innerHTML = `${currentTask.task}${currentTask.subtask ? " - " + currentTask.subtask : ""} (${currentTask.time / 60} hours)`;
-    document.getElementById("suggestion").style.setProperty('--task-color', currentTask.color);
-    document.getElementById("start-btn").disabled = false;
-    document.getElementById("time-up").disabled = false;
-    document.getElementById("time-down").disabled = false;
-});
-
-socket.on('taskAdjusted', (data) => {
-    currentTask = data;
-    document.getElementById("task-text").innerHTML = `${currentTask.task}${currentTask.subtask ? " - " + currentTask.subtask : ""} (${currentTask.time / 60} hours)`;
-});
-
-socket.on('taskCompleted', (data) => {
-    currentTask = null;
-    document.getElementById("task-text").innerHTML = "Select a Task to Begin";
-    document.getElementById("suggestion").style.setProperty('--task-color', '#888888');
-    document.getElementById("start-btn").disabled = true;
-    document.getElementById("time-up").disabled = true;
-    document.getElementById("time-down").disabled = true;
-});
-
-socket.on('tasksUpdated', (updatedTasks) => {
-    tasks = updatedTasks;
-    renderTasks();
-});
-
-socket.on('completedTasksUpdated', (updatedCompletedTasks) => {
-    completedTasks = updatedCompletedTasks;
-    if (calendar) {
-        const currentView = calendar.view.type;
-        const currentDate = calendar.view.activeStart;
-        calendar.destroy();
-        renderCalendar();
-        calendar.changeView(currentView, currentDate);
-    }
-    updateProgressBox(calendar ? calendar.view.type : 'timeGridDay');
-});
-
 socket.on('stateLoaded', (data) => {
     timer = data.timer;
     isPaused = data.isPaused;
     currentTask = data.currentTask;
+    startTimestamp = data.startTimestamp || null;
+    totalPausedTime = data.totalPausedTime || 0;
+
     document.getElementById("timer").textContent = formatTime(timer);
     document.getElementById("pause-btn").textContent = isPaused ? "Resume" : "Pause";
     document.getElementById("task-text").innerHTML = currentTask ? `${currentTask.task}${currentTask.subtask ? " - " + currentTask.subtask : ""} (${currentTask.time / 60} hours)` : "Select a Task to Begin";
@@ -910,12 +959,13 @@ socket.on('stateLoaded', (data) => {
     document.getElementById("finish-btn").disabled = !currentTask || isPaused;
     document.getElementById("time-up").disabled = !currentTask;
     document.getElementById("time-down").disabled = !currentTask;
+
     if (interval) clearInterval(interval);
-    if (currentTask && !isPaused) {
+    if (currentTask && !isPaused && startTimestamp) {
         interval = setInterval(() => {
-            timer++;
+            timer = calculateElapsedTime();
             document.getElementById("timer").textContent = formatTime(timer);
-            socket.emit('timerUpdate', { timer, isPaused, currentTask }); // Broadcast updated timer
+            socket.emit('timerUpdate', { timer, isPaused, currentTask, startTimestamp, totalPausedTime });
         }, 1000);
     }
 });
