@@ -619,3 +619,203 @@ button.add-subtask:hover {
 .popup-content button:hover {
     background: #00b8e6;
 }
+
+/* --- Original taskmaster.css content above this line --- */
+
+
+/* --- Popup Styles (Apply to both Desktop and Mobile) --- */
+.popup {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Ensure popups are on top */
+    /* display: none; /* Controlled by JS */
+}
+
+.popup-content {
+    background-color: #333; /* Dark background for popup */
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    width: 90%;
+    max-width: 450px; /* Limit max width */
+    color: #eee; /* Light text */
+}
+
+.popup-content h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #fff;
+    text-align: center;
+}
+
+.popup-content textarea {
+    width: 100%;
+    min-height: 80px; /* Adequate height for comments */
+    margin-bottom: 15px;
+    padding: 10px;
+    box-sizing: border-box;
+    border-radius: 4px;
+    border: 1px solid #555;
+    background-color: #444;
+    color: #eee;
+}
+
+.popup-buttons {
+    display: flex;
+    justify-content: space-around; /* Space out buttons */
+}
+
+.popup-buttons button {
+     padding: 10px 20px;
+     border: none;
+     border-radius: 5px;
+     cursor: pointer;
+     font-weight: bold;
+}
+
+#popup-save-btn {
+    background-color: #4CAF50; /* Green */
+    color: white;
+}
+#popup-cancel-btn {
+    background-color: #f44336; /* Red */
+    color: white;
+}
+
+#popup-save-btn:hover {
+     background-color: #45a049;
+}
+#popup-cancel-btn:hover {
+     background-color: #da190b;
+}
+
+
+/* --- Responsive Styles --- */
+@media (max-width: 768px) {
+
+    /* Ensure container allows positioning context and hides overflow */
+    .container {
+        position: relative;
+        overflow-x: hidden;
+        height: 100vh; /* Take full viewport height */
+        width: 100%;
+    }
+
+    /* Main content takes full width, sidebar/calendar removed from flow */
+    .main-content {
+        width: 100%;
+        height: 100%; /* Allow scrolling within */
+        overflow-y: auto;
+        display: flex; /* Use flex to stack middle/right */
+        flex-direction: column;
+    }
+
+    /* Reposition Sidebar for Swiping */
+    .sidebar {
+        position: fixed; /* Changed from absolute to fixed */
+        left: 0;
+        top: 0;
+        height: 100vh; /* Full height */
+        width: 85%; /* Mobile width */
+        max-width: 300px; /* Max width */
+        background: #252525; /* Existing background */
+        z-index: 500; /* Below popups but above main */
+        overflow-y: auto;
+        transform: translateX(-100%); /* Start off-screen */
+        transition: transform 0.3s ease-in-out;
+        border-right: 1px solid #444;
+        padding: 15px; /* Add padding */
+        box-sizing: border-box;
+    }
+
+    /* Reposition Calendar for Swiping */
+    .calendar { /* Target the existing calendar */
+        position: fixed; /* Changed from absolute to fixed */
+        right: 0; /* Align to right */
+        top: 0;
+        height: 100vh; /* Full height */
+        width: 85%; /* Mobile width */
+        max-width: 350px; /* Max width */
+        background: #1e1e1e; /* Existing background */
+        z-index: 500;
+        overflow-y: auto;
+        transform: translateX(100%); /* Start off-screen */
+        transition: transform 0.3s ease-in-out;
+        border-left: 1px solid #444;
+        padding: 15px; /* Add padding */
+        box-sizing: border-box;
+        display: block !important; /* Ensure it's display block */
+    }
+
+    /* Stack middle and right columns vertically */
+    .middle-column,
+    .right-column {
+        width: 100%; /* Take full width */
+        flex: none; /* Override desktop flex */
+        height: auto; /* Adjust height automatically */
+        padding: 10px; /* Add some padding */
+        box-sizing: border-box;
+    }
+
+     /* Ensure right column content is visible */
+     .right-column {
+         background-color: #2a2a2a; /* Optional: different bg for separation */
+         border-top: 1px solid #444; /* Separator line */
+     }
+
+
+    /* Adjust header/timer/suggestion for mobile */
+    .header {
+        flex-direction: column;
+        height: auto;
+        padding-bottom: 10px;
+    }
+    .timer {
+        font-size: 2.5em;
+        text-align: center;
+        margin-top: 10px;
+        height: auto;
+        line-height: 1;
+    }
+    .suggestion {
+         height: auto;
+         min-height: 50px;
+         padding: 10px;
+     }
+
+     /* Hide original inline comment section on mobile */
+     #comment-section {
+        display: none !important;
+     }
+
+
+    /* --- State Classes for Swiping --- */
+    body.show-sidebar .sidebar {
+        transform: translateX(0); /* Slide in */
+    }
+    body.show-calendar .calendar {
+        transform: translateX(0); /* Slide in */
+    }
+
+    /* --- Mobile Calendar Adjustments --- */
+    .fc {
+        font-size: 11px; /* Even smaller */
+    }
+     .fc .fc-toolbar {
+        flex-direction: column;
+        align-items: center;
+    }
+     .fc .fc-toolbar .fc-toolbar-chunk {
+        margin-bottom: 5px;
+    }
+     .fc .fc-button {
+        padding: 5px 8px !important;
+    }
+}
