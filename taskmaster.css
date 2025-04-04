@@ -59,7 +59,11 @@ body {
     gap: 20px;
     height: 100%;
     overflow-x: hidden; /* Prevent horizontal overflow */
+    position: relative;
+    z-index: 1; /* Lower than comment-section */
 }
+
+
 
 .middle-column {
     flex: 2; /* Larger middle column for controls, suggestion, and calendar */
@@ -697,6 +701,7 @@ button.add-subtask:hover {
 }
 
 
+
 /* --- Responsive Styles --- */
 @media (max-width: 768px) {
 
@@ -790,10 +795,9 @@ button.add-subtask:hover {
          padding: 10px;
      }
 
-     /* Hide original inline comment section on mobile */
      #comment-section {
-        display: none !important;
-     }
+        width: 95%; /* Slightly wider on small screens */
+        top: 60%; /* Adjust position if needed to avoid overlap with header */
 
 
     /* --- State Classes for Swiping --- */
@@ -817,5 +821,42 @@ button.add-subtask:hover {
     }
      .fc .fc-button {
         padding: 5px 8px !important;
+    }
+     }
+    /* Add these rules inside the @media (max-width: 768px) { ... } block */
+
+/* Ensure comment-section is visible and positioned correctly */
+#comment-section {
+    display: none; /* Hidden by default */
+    position: fixed; /* Use fixed positioning to overlay on mobile */
+    top: 50%; /* Center vertically */
+    left: 50%; /* Center horizontally */
+    transform: translate(-50%, -50%); /* Adjust for centering */
+    width: 90%; /* Responsive width for mobile */
+    max-width: 400px; /* Cap width for larger screens */
+    background: #202020; /* Match your dark theme */
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+    z-index: 1000; /* Ensure it’s above other elements */
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.3s ease-in-out; /* Smooth fade-in */
+  }
+  
+  /* Ensure visibility when active */
+  #comment-section[style*="display: flex"] {
+    display: flex !important; /* Override any conflicting styles */
+  }
+
+    #comment-section textarea {
+        width: 100%; /* Ensure textarea uses full width */
+        min-height: 60px; /* Adjust height as needed */
+    }
+
+    #comment-section button {
+        width: 100%; /* Make save button full width */
+        padding: 12px; /* Adjust button padding */
     }
 }

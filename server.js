@@ -1,6 +1,6 @@
 const express = require('express');
 const path = require('path');
-const { MongoClient, ObjectId } = require('mongodb'); // Import ObjectId
+const { MongoClient, ObjectId } = require('mongodb');
 const { Server } = require('socket.io');
 const http = require('http');
 const app = express();
@@ -12,23 +12,32 @@ require('dotenv').config();
 const uri = process.env.MONGODB_URI || 'mongodb+srv://taskmasteruser:Taskmaster2025!@cluster0.akz0v.mongodb.net/taskmasterdb?retryWrites=true&w=majority&appName=Cluster0';
 let db;
 
+// Centralized state for timer
+let globalTimerState = {
+  currentTask: null,
+  timer: 0,
+  isPaused: true,
+  startTimestamp: null,
+  totalPausedTime: 0,
+};
+
 async function connectToMongo() {
-    const client = new MongoClient(uri, {
-        serverSelectionTimeoutMS: 10000,
-        connectTimeoutMS: 15000,
-        retryWrites: true,
-        retryReads: true,
-        maxPoolSize: 10,
-    });
-    try {
-        console.log('Attempting MongoDB connection...');
-        await client.connect();
-        db = client.db('taskmasterdb');
-        console.log('Connected to MongoDB successfully');
-    } catch (err) {
-        console.error('MongoDB connection failed:', err);
-        setTimeout(connectToMongo, 5000); // Retry
-    }
+  const client = new MongoClient(uri, {
+    serverSelectionTimeoutMS: 10000,
+    connectTimeoutMS: 15000,
+    retryWrites: true,
+    retryReads: true,
+    maxPoolSize: 10,
+  });
+  try {
+    console.log('Attempting MongoDB connection...');
+    await client.connect();
+    db = client.db('taskmasterdb');
+    console.log('Connected to MongoDB successfully');
+  } catch (err) {
+    console.error('MongoDB connection failed:', err.message, err.stack);
+    setTimeout(connectToMongo, 5000); // Retry after 5 seconds
+  }
 }
 
 connectToMongo();
@@ -37,100 +46,171 @@ app.use(express.static(path.join(__dirname)));
 app.use(express.json());
 
 app.get('/api/tasks', async (req, res) => {
-    try {
-        if (!db) return res.status(503).json({ error: 'Database not connected' });
-        const tasks = await db.collection('tasks').find().toArray();
-        console.log('GET /api/tasks returning:', tasks);
-        res.json(tasks);
-    } catch (err) {
-        console.error('GET /api/tasks error:', err);
-        res.status(500).json({ error: 'Failed to fetch tasks' });
-    }
-});
-
-app.post('/api/tasks', async (req, res) => {
-    try {
-        if (!db) return res.status(503).json({ error: 'Database not connected' });
-        const tasks = req.body;
-        console.log('POST /api/tasks received:', tasks);
-        await db.collection('tasks').deleteMany({});
-        await db.collection('tasks').insertMany(tasks);
-        console.log('Tasks saved to DB');
-        io.emit('tasksUpdated', tasks);
-        res.json({ success: true });
-    } catch (err) {
-        console.error('POST /api/tasks error:', err);
-        res.status(500).json({ error: 'Failed to save tasks' });
-    }
-});
-
-app.get('/api/completed-tasks', async (req, res) => {
-    try {
-        if (!db) return res.status(503).json({ error: 'Database not connected' });
-        const completedTasks = await db.collection('completed_tasks').find().toArray();
-        console.log('GET /api/completed-tasks returning:', completedTasks);
-        res.json(completedTasks);
-    } catch (err) {
-        console.error('GET /api/completed-tasks error:', err);
-        res.status(500).json({ error: 'Failed to fetch completed tasks' });
-    }
+  try {
+    if (!db) return res.status(503).json({ error: 'Database not connected' });
+    const tasks = await db.collection('tasks').find().toArray();
+    console.log('GET /api/tasks returning:', tasks.length, 'tasks');
+    res.json(tasks);
+  } catch (err) {
+    console.error('GET /api/tasks error:', err.message, err.stack);
+    res.status(500).json({ error: 'Failed to fetch tasks' });
+  }
 });
 
 app.post('/api/completed-tasks', async (req, res) => {
     try {
-        if (!db) return res.status(503).json({ error: 'Database not connected' });
-        const completedTask = req.body;
-        console.log('POST /api/completed-tasks received:', completedTask);
-        const result = await db.collection('completed_tasks').insertOne(completedTask);
-        console.log('Completed task saved to DB with _id:', result.insertedId);
-        const updatedCompletedTasks = await db.collection('completed_tasks').find().toArray();
-        io.emit('completedTasksUpdated', updatedCompletedTasks);
-        res.json({ success: true, insertedId: result.insertedId });
+      if (!db) return res.status(503).json({ error: 'Database not connected' });
+      const completedTask = req.body;
+      console.log('POST /api/completed-tasks received:', completedTask);
+      const result = await db.collection('completed_tasks').insertOne(completedTask);
+      console.log('Completed task saved to DB with _id:', result.insertedId);
+      const updatedCompletedTasks = await db.collection('completed_tasks').find().toArray();
+      io.emit('completedTasksUpdated', updatedCompletedTasks); // Always broadcast full list
+      res.json({ success: true, insertedId: result.insertedId });
     } catch (err) {
-        console.error('POST /api/completed-tasks error:', err);
-        res.status(500).json({ error: 'Failed to save completed task' });
+      console.error('POST /api/completed-tasks error:', err.message, err.stack);
+      res.status(500).json({ error: 'Failed to save completed task' });
     }
+  });
+
+app.get('/api/completed-tasks', async (req, res) => {
+  try {
+    if (!db) return res.status(503).json({ error: 'Database not connected' });
+    const completedTasks = await db.collection('completed_tasks').find().toArray();
+    console.log('GET /api/completed-tasks returning:', completedTasks.length, 'tasks');
+    res.json(completedTasks);
+  } catch (err) {
+    console.error('GET /api/completed-tasks error:', err.message, err.stack);
+    res.status(500).json({ error: 'Failed to fetch completed tasks' });
+  }
+});
+
+app.post('/api/completed-tasks', async (req, res) => {
+  try {
+    if (!db) return res.status(503).json({ error: 'Database not connected' });
+    const completedTask = req.body;
+    console.log('POST /api/completed-tasks received:', completedTask);
+    const result = await db.collection('completed_tasks').insertOne(completedTask);
+    console.log('Completed task saved to DB with _id:', result.insertedId);
+    const updatedCompletedTasks = await db.collection('completed_tasks').find().toArray();
+    io.emit('completedTasksUpdated', updatedCompletedTasks); // Broadcast to all clients
+    res.json({ success: true, insertedId: result.insertedId });
+  } catch (err) {
+    console.error('POST /api/completed-tasks error:', err.message, err.stack);
+    res.status(500).json({ error: 'Failed to save completed task' });
+  }
 });
 
 app.delete('/api/completed-tasks/:id', async (req, res) => {
+  try {
+    if (!db) return res.status(503).json({ error: 'Database not connected' });
+    const taskId = req.params.id;
+    console.log(`DELETE /api/completed-tasks/${taskId} received`);
+    let objectId;
     try {
-        if (!db) return res.status(503).json({ error: 'Database not connected' });
-        const taskId = req.params.id;
-        console.log(`DELETE /api/completed-tasks/${taskId} received`);
-        // Convert the string ID to an ObjectId
-        let objectId;
-        try {
-            objectId = new ObjectId(taskId);
-        } catch (err) {
-            console.warn(`Invalid ObjectId format for ID ${taskId}`);
-            return res.status(400).json({ error: 'Invalid task ID format' });
-        }
-        const result = await db.collection('completed_tasks').deleteOne({ _id: objectId });
-        if (result.deletedCount === 0) {
-            console.warn(`No task found with ID ${taskId} to delete`);
-            return res.status(404).json({ error: 'Task not found' });
-        }
-        console.log(`Task with ID ${taskId} deleted from DB`);
-        const updatedCompletedTasks = await db.collection('completed_tasks').find().toArray();
-        io.emit('completedTasksUpdated', updatedCompletedTasks);
-        res.json({ success: true });
+      objectId = new ObjectId(taskId);
     } catch (err) {
-        console.error(`DELETE /api/completed-tasks/${req.params.id} error:`, err);
-        res.status(500).json({ error: 'Failed to delete completed task' });
+      console.warn(`Invalid ObjectId format for ID ${taskId}`);
+      return res.status(400).json({ error: 'Invalid task ID format' });
     }
+    const result = await db.collection('completed_tasks').deleteOne({ _id: objectId });
+    if (result.deletedCount === 0) {
+      console.warn(`No task found with ID ${taskId} to delete`);
+      return res.status(404).json({ error: 'Task not found' });
+    }
+    console.log(`Task with ID ${taskId} deleted from DB`);
+    const updatedCompletedTasks = await db.collection('completed_tasks').find().toArray();
+    io.emit('completedTasksUpdated', updatedCompletedTasks); // Broadcast to all clients
+    res.json({ success: true });
+  } catch (err) {
+    console.error(`DELETE /api/completed-tasks/${req.params.id} error:`, err.message, err.stack);
+    res.status(500).json({ error: 'Failed to delete completed task' });
+  }
 });
 
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'taskmaster.html'));
+  res.sendFile(path.join(__dirname, 'taskmaster.html'));
 });
+
+// Server-driven timer updates
+function updateTimer() {
+  if (!globalTimerState.isPaused && globalTimerState.startTimestamp) {
+    const now = Date.now();
+    globalTimerState.timer = Math.floor((now - globalTimerState.startTimestamp - globalTimerState.totalPausedTime) / 1000);
+    io.emit('timerUpdate', globalTimerState);
+  }
+}
+
+setInterval(updateTimer, 1000); // Update every second
 
 io.on('connection', (socket) => {
-    console.log('Client connected');
-    socket.on('timerUpdate', (data) => {
-        socket.broadcast.emit('timerUpdate', data);
-    });
+  console.log('Client connected:', socket.id);
+
+  // Send initial state to new client
+  socket.emit('stateSync', globalTimerState);
+
+  socket.on('startTimer', (task) => {
+    globalTimerState = {
+      currentTask: task,
+      timer: 0,
+      isPaused: false,
+      startTimestamp: Date.now(),
+      totalPausedTime: 0,
+    };
+    globalTimerState.currentTask.start = new Date(); // Set start time
+    io.emit('timerStarted', globalTimerState);
+  });
+
+  socket.on('pauseTimer', () => {
+    if (globalTimerState.isPaused) {
+      globalTimerState.totalPausedTime += Date.now() - globalTimerState.pauseTimestamp;
+      globalTimerState.isPaused = false;
+      globalTimerState.pauseTimestamp = null;
+    } else {
+      globalTimerState.isPaused = true;
+      globalTimerState.pauseTimestamp = Date.now();
+    }
+    io.emit('timerPaused', globalTimerState);
+  });
+
+  socket.on('finishTimer', () => {
+    globalTimerState.timer = Math.floor((Date.now() - globalTimerState.startTimestamp - globalTimerState.totalPausedTime) / 1000);
+    globalTimerState.currentTask.end = new Date(Date.now());
+    globalTimerState.currentTask.duration = globalTimerState.timer;
+    globalTimerState.isPaused = true; // Stop the timer
+    io.emit('timerFinished', globalTimerState);
+  });
+
+  socket.on('resetTimer', () => {
+    globalTimerState = { currentTask: null, timer: 0, isPaused: true, startTimestamp: null, totalPausedTime: 0 };
+    io.emit('timerReset', globalTimerState);
+  });
+
+  socket.on('tasksUpdated', (tasks) => {
+    io.emit('tasksUpdated', tasks); // Broadcast to all clients
+  });
+
+  socket.on('completedTasksUpdated', (completedTasks) => {
+    io.emit('completedTasksUpdated', completedTasks); // Broadcast to all clients
+  });
+
+  socket.on('taskGenerated', (task) => {
+    io.emit('taskGenerated', task);
+  });
+
+  socket.on('taskSelected', (task) => {
+    io.emit('taskSelected', task);
+  });
+
+  socket.on('taskAdjusted', (task) => {
+    io.emit('taskAdjusted', task);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+  });
 });
 
-server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on port ${PORT}`);
 });
