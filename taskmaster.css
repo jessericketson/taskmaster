@@ -233,6 +233,8 @@ textarea {
     max-width: 100%; /* Constrain to prevent overflow */
     overflow-x: hidden; /* Prevent horizontal spill */
     display: block; /* Ensure visibility */
+    height: 100vh; /* Full height of viewport */
+    min-height: 100vh !important; /* Override base min-height */
 }
 
 .right-column {
@@ -711,6 +713,7 @@ button.add-subtask:hover {
         overflow-x: hidden;
         height: 100vh; /* Take full viewport height */
         width: 100%;
+        z-index: 0; /* Base layer for stacking */
     }
 
     /* Main content takes full width, sidebar/calendar removed from flow */
@@ -720,21 +723,22 @@ button.add-subtask:hover {
         overflow-y: auto;
         display: flex; /* Use flex to stack middle/right */
         flex-direction: column;
+        z-index: 1; /* Above container, below panels */
     }
 
     /* Reposition Sidebar for Swiping */
     .sidebar {
-        position: fixed; /* Changed from absolute to fixed */
+        position: fixed;
         left: 0;
         top: 0;
         height: 100vh; /* Full height */
         width: 85%; /* Mobile width */
         max-width: 300px; /* Max width */
         background: #252525; /* Existing background */
-        z-index: 500; /* Below popups but above main */
+        z-index: 600; /* Above main-content, below comment-section */
         overflow-y: auto;
         transform: translateX(-100%); /* Start off-screen */
-        transition: transform 0.3s ease-in-out;
+        transition: transform 0.3s ease-in-out; /* Only transition transform */
         border-right: 1px solid #444;
         padding: 15px; /* Add padding */
         box-sizing: border-box;
@@ -742,21 +746,21 @@ button.add-subtask:hover {
 
     /* Reposition Calendar for Swiping */
     .calendar { /* Target the existing calendar */
-        position: fixed; /* Changed from absolute to fixed */
-        right: 0; /* Align to right */
+        position: fixed;
+        right: 0;
         top: 0;
-        height: 100vh; /* Full height */
+        height: 100vh; /* Full height of viewport */
         width: 85%; /* Mobile width */
         max-width: 350px; /* Max width */
         background: #1e1e1e; /* Existing background */
-        z-index: 500;
-        overflow-y: auto;
+        z-index: 600; /* Above main-content, below comment-section */
+        overflow-y: auto; /* Allow scrolling if needed */
         transform: translateX(100%); /* Start off-screen */
-        transition: transform 0.3s ease-in-out;
+        transition: transform 0.3s ease-in-out; /* Only transition transform */
         border-left: 1px solid #444;
-        padding: 15px; /* Add padding */
+        padding: 0; /* No padding to maximize space */
         box-sizing: border-box;
-        display: block !important; /* Ensure it's display block */
+        display: block; /* Ensure base display */
     }
 
     /* Stack middle and right columns vertically */
@@ -769,12 +773,11 @@ button.add-subtask:hover {
         box-sizing: border-box;
     }
 
-     /* Ensure right column content is visible */
-     .right-column {
-         background-color: #2a2a2a; /* Optional: different bg for separation */
-         border-top: 1px solid #444; /* Separator line */
-     }
-
+    /* Ensure right column content is visible */
+    .right-column {
+        background-color: #2a2a2a; /* Optional: different bg for separation */
+        border-top: 1px solid #444; /* Separator line */
+    }
 
     /* Adjust header/timer/suggestion for mobile */
     .header {
@@ -790,65 +793,53 @@ button.add-subtask:hover {
         line-height: 1;
     }
     .suggestion {
-         height: auto;
-         min-height: 50px;
-         padding: 10px;
-     }
+        height: auto;
+        min-height: 50px;
+        padding: 10px;
+    }
 
-     #comment-section {
+    #comment-section {
         width: 95%; /* Slightly wider on small screens */
         top: 60%; /* Adjust position if needed to avoid overlap with header */
-
+    }
 
     /* --- State Classes for Swiping --- */
     body.show-sidebar .sidebar {
         transform: translateX(0); /* Slide in */
+        display: block !important; /* Override any conflicting display */
     }
     body.show-calendar .calendar {
         transform: translateX(0); /* Slide in */
+        display: block !important; /* Override any conflicting display */
     }
 
-    /* --- Mobile Calendar Adjustments --- */
-    .fc {
-        font-size: 11px; /* Even smaller */
-    }
-     .fc .fc-toolbar {
+    .fc-view-harness { /* Check class name with browser dev tools */
+        height: 100% !important; }
+
+    /* Ensure comment-section is visible and positioned correctly */
+    #comment-section {
+        display: none; /* Hidden by default */
+        position: fixed; /* Use fixed positioning to overlay on mobile */
+        top: 50%; /* Center vertically */
+        left: 50%; /* Center horizontally */
+        transform: translate(-50%, -50%); /* Adjust for centering */
+        width: 90%; /* Responsive width for mobile */
+        max-width: 400px; /* Cap width for larger screens */
+        background: #202020; /* Match your dark theme */
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+        z-index: 1000; /* Ensure it’s above other elements */
         flex-direction: column;
         align-items: center;
+        justify-content: center;
+        transition: opacity 0.3s ease-in-out; /* Smooth fade-in */
     }
-     .fc .fc-toolbar .fc-toolbar-chunk {
-        margin-bottom: 5px;
-    }
-     .fc .fc-button {
-        padding: 5px 8px !important;
-    }
-     }
-    /* Add these rules inside the @media (max-width: 768px) { ... } block */
-
-/* Ensure comment-section is visible and positioned correctly */
-#comment-section {
-    display: none; /* Hidden by default */
-    position: fixed; /* Use fixed positioning to overlay on mobile */
-    top: 50%; /* Center vertically */
-    left: 50%; /* Center horizontally */
-    transform: translate(-50%, -50%); /* Adjust for centering */
-    width: 90%; /* Responsive width for mobile */
-    max-width: 400px; /* Cap width for larger screens */
-    background: #202020; /* Match your dark theme */
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
-    z-index: 1000; /* Ensure it’s above other elements */
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    transition: opacity 0.3s ease-in-out; /* Smooth fade-in */
-  }
   
-  /* Ensure visibility when active */
-  #comment-section[style*="display: flex"] {
-    display: flex !important; /* Override any conflicting styles */
-  }
+    /* Ensure visibility when active */
+    #comment-section[style*="display: flex"] {
+        display: flex !important; /* Override any conflicting styles */
+    }
 
     #comment-section textarea {
         width: 100%; /* Ensure textarea uses full width */

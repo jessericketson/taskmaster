@@ -263,6 +263,7 @@ function renderCalendar() {
         center: "title",
         right: "dayGridMonth,timeGridWeek,timeGridDay"
       },
+      // height: '100%',
       slotDuration: '00:30:00',
       slotMinTime: '00:00:00',
       slotMaxTime: '24:00:00',
@@ -675,96 +676,150 @@ Promise.all([fetchTasks(), fetchCompletedTasks()]).then(([taskData, completedDat
   }, 5000);
 });
 
-// Mobile Swipe Logic (unch unchanged)
+// Mobile Swipe Logic
 function initializeMobileSwipe() {
-    if (!('ontouchstart' in window)) return; // Exit if not a touch device
-    const mainContentArea = document.querySelector('.main-content');
-    const body = document.body;
-    if (!mainContentArea) {
-      console.error("Main content area not found for swipe initialization");
-      return;
-    }
-  
-    let touchStartX = 0;
-    let touchEndX = 0;
-    let touchStartY = 0;
-    let touchEndY = 0;
-  
-    function handleSwipe() {
-      const deltaX = touchEndX - touchStartX;
-      const deltaY = touchEndY - touchStartY;
-      const swipeThreshold = 50;
-  
-      // Only process if swipe is primarily horizontal
-      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > swipeThreshold) {
-        if (deltaX < -swipeThreshold) { // Swipe left
-          if (body.classList.contains('show-sidebar')) {
-            body.classList.remove('show-sidebar');
-          } else if (!body.classList.contains('show-calendar')) {
-            body.classList.add('show-calendar');
-            setTimeout(() => calendar && calendar.updateSize(), 350);
-          }
-        } else if (deltaX > swipeThreshold) { // Swipe right
-          if (body.classList.contains('show-calendar')) {
-            body.classList.remove('show-calendar');
-          } else if (!body.classList.contains('show-sidebar')) {
-            body.classList.add('show-sidebar');
-          }
-        }
-      }
-    }
-  
-    function handleTap() {
-      const deltaX = touchEndX - touchStartX;
-      const deltaY = touchEndY - touchStartY;
-      const tapThreshold = 20;
-  
-      if (Math.abs(deltaX) < tapThreshold && Math.abs(deltaY) < tapThreshold) {
-        const sidebar = document.querySelector('.sidebar');
-        const calendarEl = document.getElementById('calendar');
-        const commentSection = document.getElementById('comment-section');
-        const target = event.target;
-  
-        if (body.classList.contains('show-sidebar') || body.classList.contains('show-calendar')) {
-          const isOutsideSidebar = !sidebar.contains(target);
-          const isOutsideCalendar = !calendarEl.contains(target);
-          const isOutsideComment = !commentSection || !commentSection.contains(target);
-  
-          if (isOutsideSidebar && isOutsideCalendar && isOutsideComment) {
-            body.classList.remove('show-sidebar');
-            body.classList.remove('show-calendar');
-          }
-        }
-      }
-    }
-  
-    mainContentArea.addEventListener('touchstart', (e) => {
-      touchStartX = e.touches[0].screenX;
-      touchStartY = e.touches[0].screenY;
-    }, { passive: true });
-  
-    mainContentArea.addEventListener('touchmove', (e) => {
-      touchEndX = e.touches[0].screenX;
-      touchEndY = e.touches[0].screenY;
-    }, { passive: true });
-  
-    mainContentArea.addEventListener('touchend', (e) => {
-      touchEndX = e.changedTouches[0].screenX;
-      touchEndY = e.changedTouches[0].screenY;
-      handleSwipe();
-      handleTap();
-    }, { passive: true });
-  
-    // Reset sidebar/calendar on resize to desktop
-    window.addEventListener('resize', () => {
-      if (window.innerWidth > 768) {
-        body.classList.remove('show-sidebar');
-        body.classList.remove('show-calendar');
-      }
-    });
+  if (!('ontouchstart' in window)) return; // Exit if not a touch device
+  const mainContentArea = document.querySelector('.main-content');
+  const body = document.body;
+  if (!mainContentArea) {
+    console.error("Main content area not found for swipe initialization");
+    return;
   }
-  
-  // Run on DOM load
-  document.addEventListener('DOMContentLoaded', () => {
-    initializeMobileSwipe(); // No delay needed, DOM is ready
+
+  let touchStartX = 0;
+  let touchEndX = 0;
+  let touchStartY = 0;
+  let touchEndY = 0;
+
+  function handleSwipe() {
+    const deltaX = touchEndX - touchStartX;
+    const deltaY = touchEndY - touchStartY;
+    const swipeThreshold = 50;
+
+    // Only process if swipe is primarily horizontal
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > swipeThreshold) {
+      console.log("Swipe detected: deltaX =", deltaX, "deltaY =", deltaY); // Debug log
+      if (deltaX < -swipeThreshold) { // Swipe left
+        if (body.classList.contains('show-sidebar')) {
+          body.classList.remove('show-sidebar');
+          console.log("Removed show-sidebar: ", body.classList.toString());
+        } else if (!body.classList.contains('show-calendar')) {
+          body.classList.add('show-calendar');
+          console.log("Added show-calendar: ", body.classList.toString());
+          // Update calendar size after transition
+          setTimeout(() => {
+              if (calendar) {
+                  calendar.updateSize();
+                  console.log("Calendar size updated after swipe");
+                  // Force a window resize event as a fallback
+                  window.dispatchEvent(new Event('resize'));
+              } else {
+                  console.log("Calendar instance not found");
+              }
+          }, 350); // Matches 0.3s transition
+        }
+      } else if (deltaX > swipeThreshold) { // Swipe right
+        if (body.classList.contains('show-calendar')) {
+          body.classList.remove('show-calendar');
+          console.log("Removed show-calendar: ", body.classList.toString());
+          // Update calendar size after hiding
+          setTimeout(() => {
+              if (calendar) {
+                  calendar.updateSize();
+                  console.log("Calendar size updated after hiding");
+              }
+          }, 350);
+        } else if (!body.classList.contains('show-sidebar')) {
+          body.classList.add('show-sidebar');
+          console.log("Added show-sidebar: ", body.classList.toString());
+        }
+      }
+    }
+  }
+
+  function handleTap() {
+    const deltaX = touchEndX - touchStartX;
+    const deltaY = touchEndY - touchStartY;
+    const tapThreshold = 20;
+
+    if (Math.abs(deltaX) < tapThreshold && Math.abs(deltaY) < tapThreshold) {
+      console.log("Tap detected: deltaX =", deltaX, "deltaY =", deltaY); // Debug log
+      const sidebar = document.querySelector('.sidebar');
+      const calendarEl = document.getElementById('calendar');
+      const commentSection = document.getElementById('comment-section');
+      const target = event.target;
+
+      if (body.classList.contains('show-sidebar') || body.classList.contains('show-calendar')) {
+        const isOutsideSidebar = !sidebar.contains(target);
+        const isOutsideCalendar = !calendarEl.contains(target);
+        const isOutsideComment = !commentSection || !commentSection.contains(target);
+
+        if (isOutsideSidebar && isOutsideCalendar && isOutsideComment) {
+          body.classList.remove('show-sidebar');
+          body.classList.remove('show-calendar');
+          console.log("Tapped outside, removed classes: ", body.classList.toString());
+          // Update calendar size after hiding
+          setTimeout(() => {
+              if (calendar) {
+                  calendar.updateSize();
+                  console.log("Calendar size updated after tap");
+              }
+          }, 350);
+        }
+      }
+    }
+  }
+
+  mainContentArea.addEventListener('touchstart', (e) => {
+    touchStartX = e.touches[0].screenX;
+    touchStartY = e.touches[0].screenY;
+    console.log("Touch start: X =", touchStartX, "Y =", touchStartY); // Debug log
+  }, { passive: true });
+
+  mainContentArea.addEventListener('touchmove', (e) => {
+    touchEndX = e.touches[0].screenX;
+    touchEndY = e.touches[0].screenY;
+  }, { passive: true });
+
+  mainContentArea.addEventListener('touchend', (e) => {
+    touchEndX = e.changedTouches[0].screenX;
+    touchEndY = e.changedTouches[0].screenY;
+    console.log("Touch end: X =", touchEndX, "Y =", touchEndY); // Debug log
+    handleSwipe();
+    handleTap();
+  }, { passive: true });
+
+  // Reset sidebar/calendar on resize to desktop
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 768) {
+      body.classList.remove('show-sidebar');
+      body.classList.remove('show-calendar');
+      console.log("Resized to desktop, removed classes: ", body.classList.toString());
+      if (calendar) {
+          calendar.updateSize();
+          console.log("Calendar size updated on resize");
+      }
+    }
   });
+
+  // Mutation observer to detect when calendar becomes visible
+  const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+          if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+              if (body.classList.contains('show-calendar')) {
+                  if (calendar) {
+                      calendar.updateSize();
+                      console.log("Calendar size updated on show-calendar class added");
+                      window.dispatchEvent(new Event('resize'));
+                  }
+              }
+          }
+      });
+  });
+  observer.observe(body, { attributes: true });
+}
+
+// Run on DOM load
+document.addEventListener('DOMContentLoaded', () => {
+  initializeMobileSwipe(); // No delay needed, DOM is ready
+});
